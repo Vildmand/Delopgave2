@@ -48,6 +48,7 @@ API_URL=http://192.168.0.104:8000 python3 pi.py
 ```
 
 Pust på Sense HAT'en for at få fugten over 60 %RH. LED'en bliver rød, og alarmen dukker op i kontrolcentret.
+Trin for trin med fejlfinding: `docs/PI-GUIDE.md`.
 
 ## Test
 
