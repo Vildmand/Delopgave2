@@ -2,41 +2,51 @@
 #
 # Trin: 1) sårbarhedstjek af pakker  2) de 5 tests  3) byg Docker-imaget og
 # start hele stakken (API + PostgreSQL)  4) kør Postman-testene mod den kørende stak.
+# Fejler ét trin, stopper kørslen, og GitHub viser et rødt kryds ved committet.
 #
 # Kører automatisk ved hvert push til main og ved pull requests.
 # Kan også startes i hånden: Actions -> CI -> Run workflow.
 name: CI
 
+# "on" = hvornår workflowet starter.
 on:
   push:
-    branches: [main]
-  pull_request:
-  workflow_dispatch:
+    branches: [main]   # hvert push til main
+  pull_request:        # hver pull request
+  workflow_dispatch:   # knappen "Run workflow" i GitHub
 
 permissions:
-  contents: read  # CI må kun læse koden
+  contents: read  # CI må kun læse koden (mindst mulige rettigheder = DevSecOps)
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-latest   # en frisk Linux-maskine fra GitHub, hver gang
+    timeout-minutes: 10      # stop, hvis noget hænger, så der ikke bruges minutter forgæves
     steps:
+      # Hent repoets kode ned på maskinen.
       - uses: actions/checkout@v7
+      # Installér Python 3.12 (samme version som i Dockerfile).
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Installer pakker
         run: pip install -r requirements.txt -r requirements-dev.txt pip-audit
+      # pip-audit slår pakkerne op i en database over kendte sikkerhedshuller.
       - name: Sikkerhed - kendte sårbarheder i pakkerne (DevSecOps)
         run: pip-audit -r requirements.txt
+      # De 5 pytest-tests (tests/test_mvp.py) mod en testdatabase i hukommelsen.
       - name: Test - de 5 tests
         run: pytest -v
+      # Byg og start præcis det samme, som kører på PC'en. curl venter (op til ~30 s),
+      # til API'et svarer, før vi går videre.
       - name: Deploy - byg og start API + PostgreSQL i Docker
         run: |
           docker compose up -d --build
           curl --retry 15 --retry-delay 2 --retry-all-errors -fsS http://localhost:8000/alarms
+      # Newman er Postmans kommandolinjeværktøj: kører de 5 Postman-kald mod den rigtige stak.
       - name: Postman - kør collectionen mod den kørende løsning
         run: npx --yes newman@6 run postman/fugt-mvp.postman_collection.json
+      # Kun hvis noget fejlede: vis API'ets log, så man kan se hvorfor (logging/fejlfinding).
       - name: Vis API-loggen, hvis noget fejlede
         if: failure()
         run: docker compose logs api

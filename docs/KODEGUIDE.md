@@ -1,6 +1,44 @@
-# Kodeguide: sådan virker løsningen
+# Kodeguide: sådan virker løsningen, og hvorfor
 
-Læs filerne i denne rækkefølge. Hver fil kan forklares på et minut.
+Læs filerne i den rækkefølge, de står her. Hver fil kan forklares på et minut.
+Alle kodelinjer er også kommenteret på dansk direkte i filerne.
+Billederne herunder er taget af den rigtige kode med de rigtige linjenumre.
+
+## 0. Hele repoet (treeview)
+
+```
+Delopgave2/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                       CI/CD: pip-audit → pytest → Docker → Newman
+├── docs/
+│   ├── img/                             kodeskærmbillederne i denne guide (01–11)
+│   ├── KODEGUIDE.md                     denne fil
+│   ├── KRAV.md                          opgavens krav → hvor de er løst
+│   ├── PI-GUIDE.md                      sådan startes pi.py på Raspberry Pi'en
+│   └── VIDEOMANUSKRIPT.md               manuskript til videoen (ca. 5 min)
+├── pi/
+│   └── pi.py                            kører på Pi'en: måler, sender, farver LED'en
+├── postman/
+│   └── fugt-mvp.postman_collection.json 5 Postman-kald, der gennemspiller alarmflowet
+├── static/
+│   └── index.html                       kontrolcentret (HTML + CSS + JavaScript i én fil)
+├── tests/
+│   └── test_mvp.py                      de 5 pytest-tests
+├── .dockerignore                        filer, der ikke kommer med i Docker-imaget
+├── .gitignore                           filer, git ignorerer
+├── Dockerfile                           opskriften på API'ets container
+├── README.md                            forsiden på GitHub: kom i gang + endpoints
+├── db.py                                databasen: tabellerne measurement og alarm
+├── docker-compose.yml                   starter API + PostgreSQL som to containere
+├── main.py                              REST API'et (FastAPI): de 4 endpoints
+├── pytest.ini                           fortæller pytest, hvor koden ligger
+├── requirements-dev.txt                 pakker kun til test
+├── requirements.txt                     pakker til serveren
+└── rules.py                             domænereglerne: grøn/gul/rød + åbn/luk alarm
+```
+
+Kun tre filer udgør selve serveren: `main.py`, `rules.py` og `db.py`.
 
 ## 1. Den store tegning
 
@@ -14,66 +52,125 @@ Browser (index.html) --GET målinger/alarmer, POST kvittering--> API
 
 Kun serveren træffer beslutninger. Pi'en og browseren viser bare, hvad serveren har sagt.
 
+| Opgavens krav | Hvor i koden |
+|---|---|
+| Event: *Sensor Value Received* | `POST /measurements` (billede 3) → tabellen `measurement` (billede 5) |
+| Beslutning: threshold-check | `rules.status()` (billede 1) |
+| Event: *Anomaly Detected* → alarm | `rules.should_open_alarm()` → tabellen `alarm` |
+| Validering | `MeasurementIn` (billede 2) |
+| Separat database | PostgreSQL i egen container (billede 9) |
+| Docker | `Dockerfile` + `docker-compose.yml` (billede 9–10) |
+| CI/CD | `.github/workflows/ci.yml` (billede 11) |
+| Tilgås fra IoT-enhed | `pi/pi.py` (billede 6) + `--host 0.0.0.0` (billede 10) |
+
 ## 2. `rules.py`: reglen (hjertet)
 
-Tre små funktioner, ingen database og intet netværk:
+![rules.py](img/01-rules.png)
 
-- `status(humidity)`: over 60 → `"red"`, fra 55 til og med 60 → `"yellow"`, ellers `"green"`.
-- `should_open_alarm(humidity, alarm_already_open)`: kun ja, hvis rød **og** der ikke allerede er en åben alarm. Det forhindrer dubletter.
-- `should_close_alarm(humidity)`: ja, hvis under 55. Mellemrummet 55–60 er *hysterese*: alarmen blinker ikke, hvis fugten vipper omkring 60.
+**Hvad:** tre små funktioner. `status()` giver farven, `should_open_alarm()` afgør, om der skal åbnes en alarm, og `should_close_alarm()` afgør, om den skal lukkes.
 
-**Spørgsmål til eksamen:** *Hvorfor lukker alarmen ikke ved 59?* Fordi den skulle åbne og lukke hele tiden, hvis fugten svinger mellem 59 og 61. Det svarer til en termostat.
+**Hvorfor sådan:**
+- Reglerne er *rene funktioner* uden database og netværk. Derfor kan test 1 tjekke dem på en brøkdel af et sekund, og de kan ændres ét sted.
+- Grænserne 55 og 60 står som konstanter øverst, så de ikke er gemt rundt omkring i koden.
+- `and not alarm_already_open` forhindrer dubletter: 10 røde målinger giver én alarm, ikke 10.
+- Mellemrummet 55–60 er *hysterese*: alarmen lukker først under 55, så den ikke blinker, når fugten vipper omkring 60. Det virker som en termostat.
 
-## 3. `db.py`: databasen
+**Eksamensspørgsmål:** *Hvorfor lukker alarmen ikke ved 59?* Fordi den så ville åbne og lukke hele tiden, hvis fugten svinger mellem 59 og 61.
 
-- `Measurement` = én række pr. måling (eventet *Sensor Value Received*). Gemmer enhed, fugt, farve og tidspunkt.
-- `Alarm` = én række pr. alarm (eventet *Anomaly Detected*). Tre tidspunkter fortæller historien: `opened_at` (åbnet), `acknowledged_at` (kvitteret), `closed_at` (normaliseret).
-- `DATABASE_URL` bestemmer databasen. I Docker er det PostgreSQL; uden Docker en SQLite-fil.
-- `get_session()` giver hver forespørgsel sin egen forbindelse og lukker den bagefter.
+## 3. `main.py`: API'et
 
-SQLModel betyder, at én Python-klasse både er tabellen og objektet i koden.
+### Validering af input
 
-## 4. `main.py`: API'et
+![MeasurementIn](img/02-validering.png)
 
-`POST /measurements` er hele flowet på 15 linjer:
+**Hvorfor:** Pydantic tjekker data, før vores kode overhovedet kører. Fugt på 150 eller -5 afvises automatisk med HTTP 422. Så kan reglerne stole på, at tallet er gyldigt. Det er opgavens krav om *validering*.
 
-1. **Event:** Pydantic-klassen `MeasurementIn` tjekker data (fugt skal være 0–100). Forkerte data afvises automatisk med HTTP 422.
-2. Målingen gemmes med sin farve fra `rules.status()`.
-3. **Beslutning:** find en åben alarm for enheden (`closed_at == None`), og spørg reglerne.
-4. **Handling:** opret en ny alarm, eller luk den åbne.
-5. `session.commit()` gemmer det hele på én gang (en *transaktion*): enten bliver alt gemt, eller intet.
-6. Svaret `{"status": "red", "alarm_open": true}` fortæller Pi'en, hvilken farve LED'en skal have.
+### Hele event-flowet: `POST /measurements`
 
-De andre endpoints:
+![POST /measurements](img/03-post-measurements.png)
 
-- `GET /measurements?limit=20` og `GET /alarms`: nyeste først, til kontrolcentret.
-- `POST /alarms/{id}/ack`: sætter `acknowledged_at`. Svarer 404, hvis alarmen ikke findes, og 409, hvis den allerede er kvitteret. Kvittering lukker **ikke** alarmen; det gør kun normal fugt.
-- `GET /`: sender `static/index.html`.
-- `/docs`: Swagger, som FastAPI laver automatisk ud fra koden.
+**Hvad:** de tre trin *event → beslutning → handling* står som tre kommentarer i koden.
 
-`lifespan` opretter tabellerne én gang, når serveren starter.
+**Hvorfor sådan:**
+- `Depends(get_session)`: FastAPI giver hver forespørgsel sin egen databaseforbindelse. I testene byttes den ud med en testdatabase uden at ændre koden.
+- Endpointet *spørger* reglerne i stedet for selv at sammenligne tal. Så ligger domænelogikken ét sted.
+- `session.commit()` til sidst gemmer måling og alarm samlet (en *transaktion*): enten bliver alt gemt, eller intet. Der kan ikke opstå en alarm uden den måling, der udløste den.
+- Svaret `{"status": "red", "alarm_open": true}` er det, Pi'en bruger til at farve LED'en.
 
-## 5. `static/index.html`: kontrolcentret
+### Kvittering: `POST /alarms/{id}/ack`
 
-Én fil med tre dele:
+![Kvittering](img/04-kvittering.png)
 
-- **CSS** (øverst): farverne står ét sted i `:root`. Mørk tilstand skifter bare farverne.
-- **HTML**: fugt-kortet, to grå *Fase 2 – mockup*-kort (lufttryk og rystelser, faste tal, ingen kode bagved) og alarmtabellen.
-- **JavaScript** (nederst, ca. 45 linjer):
-  - `loadHumidity()` henter den nyeste måling og farver kortet.
-  - `loadAlarms()` bygger tabellen. Kun åbne, ukvitterede alarmer får en **Kvittér**-knap.
-  - `ack(id)` sender kvitteringen og opdaterer tabellen.
-  - `setInterval(refresh, 3000)` gentager hvert 3. sekund.
+**Hvorfor:** operatøren skal kunne sige "jeg har set den". 404 hvis alarmen ikke findes, 409 hvis den allerede er kvitteret. Kvittering lukker **ikke** alarmen; det gør kun normal fugt. Sådan kan man se forskel på "nogen har set det" og "problemet er væk".
 
-## 6. `pi/pi.py`: Raspberry Pi
+De andre endpoints er korte: `GET /measurements?limit=20` (1–100, ellers 422) og `GET /alarms` henter nyeste først, `GET /` sender kontrolcentret, og `/docs` er Swagger, som FastAPI laver automatisk.
 
-En uendelig løkke hvert 5. sekund: læs fugt (`sense.get_humidity()`), send med `requests.post`, farv hele LED-displayet med `sense.clear(farve)`.
-Blå betyder *ingen forbindelse*. Pi'en bestemmer ikke noget selv, så reglerne kun skal ændres ét sted.
+## 4. `db.py`: databasen
 
-## 7. Test og automatik
+![db.py](img/05-tabeller.png)
 
-- `tests/test_mvp.py`: 5 tests (se tabellen *Strategi → regel → test* i `KRAV.md`). Hver test får en tom database i hukommelsen, så de kører på under et sekund.
-- `postman/`: 5 kald, der gennemspiller hele alarmflowet mod den kørende Docker-stak.
-- `Dockerfile`: bygger API'et i en container, der ikke kører som root.
-- `docker-compose.yml`: to containere, `db` (PostgreSQL) og `api`. API'et venter, til databasen er klar (healthcheck).
-- `.github/workflows/ci.yml`: pip-audit → pytest → Docker → Newman. Kører automatisk ved hvert push til `main`.
+**Hvad:** to tabeller. `Measurement` = én række pr. måling. `Alarm` = én række pr. alarm, med tre tidspunkter: `opened_at`, `acknowledged_at`, `closed_at`.
+
+**Hvorfor sådan:**
+- SQLModel: én Python-klasse er både tabellen og objektet i koden. Vi skriver ingen SQL i hånden.
+- `DATABASE_URL` fra miljøet: i Docker er det PostgreSQL; uden Docker en SQLite-fil. Samme kode, to databaser.
+- Alarmens tilstand læses ud fra, hvilke tidspunkter der er udfyldt. Så behøver vi ikke et ekstra "status"-felt, der kan komme ud af trit.
+
+## 5. `pi/pi.py`: Raspberry Pi'en
+
+![pi.py](img/06-pi.png)
+
+**Hvorfor sådan:**
+- Pi'en er "dum": den måler, sender og viser svaret. Reglerne ligger kun på serveren, så de kan ændres uden at røre Pi'en.
+- `timeout=5` og `except requests.RequestException`: falder serveren ud, hænger Pi'en ikke. Den viser blå og prøver igen om 5 sekunder (fejlhåndtering).
+- `API_URL` sættes med en miljøvariabel, så samme script virker, selv om PC'ens IP skifter.
+
+## 6. `static/index.html`: kontrolcentret
+
+![Kontrolcentret JavaScript](img/07-kontrolcenter-js.png)
+
+**Hvorfor sådan:**
+- Én fil uden framework: det mindste, der viser alarmflowet for operatøren.
+- *Polling* med `setInterval(refresh, 3000)`: siden spørger API'et hvert 3. sekund. Simpelt og nok til en MVP.
+- Kun åbne, ukvitterede alarmer får en **Kvittér**-knap.
+- Lufttryk og rystelser er grå *Fase 2 – mockup*-kort med faste tal og ingen kode bagved. De viser vejen frem uden at bygge den.
+
+## 7. `tests/test_mvp.py`: de 5 tests
+
+![Test-fixture](img/08-test-fixture.png)
+
+**Hvorfor sådan:** hver test får en ny, tom database i hukommelsen (`sqlite://`). Testene påvirker ikke hinanden og kræver ikke Docker. `dependency_overrides` bytter den rigtige database ud med testdatabasen. Se tabellen *strategi → regel → test* i `KRAV.md`.
+
+## 8. Docker: `docker-compose.yml` og `Dockerfile`
+
+![docker-compose.yml](img/09-docker-compose.png)
+
+**Hvorfor sådan:**
+- To containere: `db` og `api`. Det er opgavens krav om en *separat* database.
+- `volumes: pgdata`: data overlever en genstart.
+- `healthcheck` + `condition: service_healthy`: API'et starter først, når databasen svarer. Ellers ville `create_tables()` fejle ved opstart.
+
+![Dockerfile](img/10-dockerfile.png)
+
+**Hvorfor sådan:**
+- `requirements.txt` kopieres før koden, så Docker kan genbruge pakkelaget, når kun koden ændres.
+- `USER appuser`: containeren kører ikke som root (sikkerhed).
+- `--host 0.0.0.0`: API'et kan nås fra andre maskiner, fx Pi'en, og ikke kun fra PC'en selv.
+
+## 9. CI/CD: `.github/workflows/ci.yml`
+
+![ci.yml](img/11-ci.png)
+
+**Hvorfor sådan:** ved hvert push til `main` kører GitHub fire trin. Fejler ét, stopper det hele:
+
+1. **pip-audit**: kendte sikkerhedshuller i pakkerne (DevSecOps).
+2. **pytest**: de 5 tests.
+3. **Docker**: byg og start præcis den stak, der kører på PC'en.
+4. **Newman**: de 5 Postman-kald mod den kørende stak, med rigtig PostgreSQL.
+
+`permissions: contents: read` giver CI mindst mulige rettigheder. Fejler noget, vises API'ets log.
+
+## 10. Hvad er bevidst IKKE med (bare minimum)
+
+Opgaven kræver ikke disse ting, så de er udeladt og nævnt i rapportens refleksion som vejen frem:
+login/API-nøgler, migrationer (Alembic), lufttryk og rystelser som rigtige målinger, mørkt tema, deploy til cloud, monitorering ud over loggen.
