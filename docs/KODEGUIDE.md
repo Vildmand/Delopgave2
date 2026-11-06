@@ -76,4 +76,4 @@ Blå betyder *ingen forbindelse*. Pi'en bestemmer ikke noget selv, så reglerne 
 - `postman/`: 5 kald, der gennemspiller hele alarmflowet mod den kørende Docker-stak.
 - `Dockerfile`: bygger API'et i en container, der ikke kører som root.
 - `docker-compose.yml`: to containere, `db` (PostgreSQL) og `api`. API'et venter, til databasen er klar (healthcheck).
-- `.github/workflows/ci.yml`: pip-audit → pytest → Docker → Newman. Kører kun manuelt eller med `CI_ENABLED`, så vi ikke bruger GitHub-minutter unødigt.
+- `.github/workflows/ci.yml`: pip-audit → pytest → Docker → Newman. Kører automatisk ved hvert push til `main`.

@@ -3,8 +3,8 @@
 # Trin: 1) sårbarhedstjek af pakker  2) de 5 tests  3) byg Docker-imaget og
 # start hele stakken (API + PostgreSQL)  4) kør Postman-testene mod den kørende stak.
 #
-# Sparer minutter: jobbet kører kun, når nogen trykker "Run workflow" på GitHub,
-# eller når repo-variablen CI_ENABLED er sat til "true". Et sprunget job koster 0 minutter.
+# Kører automatisk ved hvert push til main og ved pull requests.
+# Kan også startes i hånden: Actions -> CI -> Run workflow.
 name: CI
 
 on:
@@ -18,7 +18,6 @@ permissions:
 
 jobs:
   ci:
-    if: vars.CI_ENABLED == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
