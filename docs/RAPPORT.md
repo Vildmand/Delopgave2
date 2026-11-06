@@ -195,7 +195,7 @@ Vores kode ligger på GitHub, som er en hjemmeside, hvor programmører gemmer og
 (Tabel 5, egen fremstilling (2026): Trinene i den automatiske kontrol)
 :::
 
-Den første automatiske kørsel (kørsel nummer 3, den 6. november 2026) var grøn i alle trin og tog under et minut (se figur 6). Den kan ses på https://github.com/Vildmand/Delopgave2/actions/runs/42223918668.
+Den første automatiske kørsel (kørsel nummer 3, den 6. november 2026) var grøn i alle trin og tog under et minut (se figur 6). Den kan ses på https://github.com/Vildmand/Delopgave2/actions/runs/42223918668. Siden er kontrollen kørt af sig selv ved hver ændring. Kørsel nummer 5 på den endelige kode med danske kommentarer var også grøn (https://github.com/Vildmand/Delopgave2/actions/runs/42225474539).
 
 ![](img/ci-groen-koersel-3.png){width=58%}
 
