@@ -1,0 +1,31 @@
+# Start hele løsningen: docker compose up --build
+# To containere: "db" (PostgreSQL, databasen) og "api" (vores FastAPI-kode).
+# Databasen er altså adskilt fra API'et, og data overlever en genstart (volume "pgdata").
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: fugt
+      POSTGRES_PASSWORD: fugt  # kun til lokal demo, aldrig i produktion
+      POSTGRES_DB: fugt
+    ports:
+      - "5432:5432"  # så man kan kigge i databasen med psql
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:  # API'et venter, til databasen svarer
+      test: ["CMD", "pg_isready", "-U", "fugt"]
+      interval: 2s
+      retries: 15
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://fugt:fugt@db:5432/fugt
+    ports:
+      - "8000:8000"  # Pi'en og browseren rammer http://<pc-ip>:8000
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
