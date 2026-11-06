@@ -20,7 +20,9 @@ En medarbejder ser alarmen i kontrolcentret og kvitterer.
 | `postman/` | Postman-samling med 5 kald (hele alarmflowet) | |
 | `Dockerfile`, `docker-compose.yml` | Kør API + PostgreSQL i hver sin container | |
 | `.github/workflows/ci.yml` | CI/CD på GitHub Actions | |
-| `docs/` | KODEGUIDE (forklaring af koden) og KRAV (opgavens krav → fil) | |
+| `docs/` | START-HER (overblik på én side), præsentation, KODEGUIDE (forklaring af koden), KRAV (opgavens krav → fil), PI-GUIDE og rapport | |
+
+**Ny i gruppen?** Start med `docs/START-HER.md` og `docs/praesentation.pdf`.
 
 Kommentarerne i koden er en del af dokumentationen. Start med `docs/KODEGUIDE.md`.
 
