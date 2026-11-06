@@ -1,0 +1,43 @@
+# CI/CD: tjekker og bygger løsningen automatisk på GitHub Actions.
+#
+# Trin: 1) sårbarhedstjek af pakker  2) de 5 tests  3) byg Docker-imaget og
+# start hele stakken (API + PostgreSQL)  4) kør Postman-testene mod den kørende stak.
+#
+# Sparer minutter: jobbet kører kun, når nogen trykker "Run workflow" på GitHub,
+# eller når repo-variablen CI_ENABLED er sat til "true". Et sprunget job koster 0 minutter.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read  # CI må kun læse koden
+
+jobs:
+  ci:
+    if: vars.CI_ENABLED == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Installer pakker
+        run: pip install -r requirements.txt -r requirements-dev.txt pip-audit
+      - name: Sikkerhed - kendte sårbarheder i pakkerne (DevSecOps)
+        run: pip-audit -r requirements.txt
+      - name: Test - de 5 tests
+        run: pytest -v
+      - name: Deploy - byg og start API + PostgreSQL i Docker
+        run: |
+          docker compose up -d --build
+          curl --retry 15 --retry-delay 2 --retry-all-errors -fsS http://localhost:8000/alarms
+      - name: Postman - kør collectionen mod den kørende løsning
+        run: npx --yes newman@6 run postman/fugt-mvp.postman_collection.json
+      - name: Vis API-loggen, hvis noget fejlede
+        if: failure()
+        run: docker compose logs api

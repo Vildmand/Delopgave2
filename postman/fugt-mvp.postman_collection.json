@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "Fugt-MVP",
+    "description": "Hele alarmflowet i 5 kald. Kør i rækkefølge (Run collection).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "alarmId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Normal måling (48 %RH) giver grøn",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/measurements",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"device_id\": \"postman-01\", \"humidity\": 48}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"201 og grøn\", () => {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().status).to.eql(\"green\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Høj måling (62 %RH) giver rød og åbner alarm",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/measurements",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"device_id\": \"postman-01\", \"humidity\": 62}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"rød og alarm åben\", () => {",
+              "  const b = pm.response.json();",
+              "  pm.expect(b.status).to.eql(\"red\");",
+              "  pm.expect(b.alarm_open).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Hent alarmer og find den nye",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/alarms",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"alarmen findes og er åben\", () => {",
+              "  const a = pm.response.json().find(x => x.device_id === \"postman-01\" && !x.closed_at);",
+              "  pm.expect(a).to.be.an(\"object\");",
+              "  pm.collectionVariables.set(\"alarmId\", a.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Kvittér for alarmen",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/alarms/{{alarmId}}/ack",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"kvitteret\", () => {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().acknowledged_at).to.not.eql(null);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Fugt under 55 normaliserer alarmen",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/measurements",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"device_id\": \"postman-01\", \"humidity\": 50}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"grøn og alarm lukket\", () => {",
+              "  const b = pm.response.json();",
+              "  pm.expect(b.status).to.eql(\"green\");",
+              "  pm.expect(b.alarm_open).to.eql(false);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
