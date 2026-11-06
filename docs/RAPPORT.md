@@ -30,7 +30,7 @@ De vigtigste fagord står i tabel 1. Andre forkortelser bliver forklaret i en pa
 
 | Begreb | Forklaring |
 |-------|-----------------|
-| API (Application Programming Interface) og endpoint | En fast indgang til et program, som andre programmer kan sende og hente data gennem, ligesom en skranke. Et endpoint er én adresse i API'et, fx `/measurements`. |
+| API (Application Programming Interface) og endpoint | En fast indgang til et program, som andre programmer kan sende og hente data gennem, ligesom en skranke. Et endpoint er én adresse i API'et, for eksempel adressen /measurements, hvor Pi'en sender sine målinger hen. |
 | REST (Representational State Transfer) | En udbredt måde at bygge et API på med internettets almindelige kommandoer GET ("hent") og POST ("send") (Fielding, 2000). |
 | MVP (Minimum Viable Product) og microservice | MVP er den mindste udgave af et produkt, der virker og kan afprøves (Ries, 2011). En microservice er en lille, selvstændig webtjeneste, der løser én opgave. |
 | Hændelse (på engelsk event) | En besked om noget, der allerede er sket, fx "måling modtaget" eller "alarm oprettet". |
