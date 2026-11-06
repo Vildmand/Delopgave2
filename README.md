@@ -71,7 +71,7 @@ Postman: importér `postman/fugt-mvp.postman_collection.json` og tryk **Run coll
 ## CI/CD
 
 GitHub Actions kører: pip-audit (sårbarheder) → de 5 tests → byg og start Docker (API + PostgreSQL) → Postman via Newman.
-For at spare minutter kører den kun ved **Actions → CI → Run workflow**, eller hvis repo-variablen `CI_ENABLED` er `true`.
+Den kører automatisk ved hvert push til `main` og ved pull requests. Den kan også startes i hånden under **Actions → CI → Run workflow**.
 
 ## Den store udgave
 
