@@ -12,7 +12,10 @@ Delopgave2/
 │   └── workflows/
 │       └── ci.yml                       CI/CD: pip-audit → pytest → Docker → Newman
 ├── docs/
-│   ├── img/                             kodeskærmbillederne i denne guide (01–11)
+│   ├── img/
+│   │   ├── 01-rules.png … 11-ci.png      kodeskærmbillederne i denne guide
+│   │   ├── diagram-simpel-1…6-*.png     arkitektur, alarmflow, sekvens, CI/CD, datamodel, vejen frem
+│   │   └── README.md                    oversigt over diagrammerne
 │   ├── KODEGUIDE.md                     denne fil
 │   ├── KRAV.md                          opgavens krav → hvor de er løst
 │   ├── PI-GUIDE.md                      sådan startes pi.py på Raspberry Pi'en
