@@ -1,3 +1,4 @@
+# Filer, der IKKE sendes med ind i Docker-buildet (mindre og hurtigere build).
 .venv
 __pycache__
 *.db

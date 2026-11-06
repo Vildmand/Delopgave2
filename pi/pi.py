@@ -10,37 +10,43 @@ Pi'en tager ingen beslutninger selv. Reglerne ligger kun på serveren (rules.py)
 så de kan ændres ét sted.
 
 Serverens adresse sættes med miljøvariablen API_URL, fx:
-    API_URL=http://192.168.0.104:8000 python3 pi.py
+    API_URL=http://192.168.0.103:8000 python3 pi.py
 """
 
-import os
-import time
+import os  # læser miljøvariablerne API_URL og DEVICE_ID
+import time  # time.sleep() venter mellem målingerne
 
-import requests
+import requests  # sender HTTP-forespørgsler til API'et
 from sense_hat import SenseHat  # findes kun på Pi'en (sudo apt install sense-hat)
 
-API_URL = os.getenv("API_URL", "http://192.168.0.104:8000")
-DEVICE_ID = os.getenv("DEVICE_ID", "pi-01")
-INTERVAL_SECONDS = 5
+# Indstillinger. os.getenv(navn, standard) bruger standardværdien, hvis variablen mangler.
+API_URL = os.getenv("API_URL", "http://192.168.0.103:8000")  # serverens adresse
+DEVICE_ID = os.getenv("DEVICE_ID", "pi-01")  # Pi'ens navn i databasen
+INTERVAL_SECONDS = 5  # hvor ofte der måles
 
+# LED-farver som (rød, grøn, blå), hver fra 0 til 255. Nøglerne er API'ets svar.
 COLORS = {"green": (0, 150, 0), "yellow": (200, 140, 0), "red": (200, 0, 0)}
-NO_CONNECTION = (0, 0, 150)  # blå
+NO_CONNECTION = (0, 0, 150)  # blå: serveren svarer ikke
 
-sense = SenseHat()
+sense = SenseHat()  # forbindelsen til Sense HAT'ens sensorer og LED-display
 
-while True:
+while True:  # kør for evigt (stop med Ctrl+C)
+    # 1. Læs fugten, og afrund til én decimal (fx 48.237... -> 48.2).
     humidity = round(sense.get_humidity(), 1)
     try:
+        # 2. Send målingen som JSON. timeout=5: giv op efter 5 sekunder uden svar.
         response = requests.post(
             f"{API_URL}/measurements",
             json={"device_id": DEVICE_ID, "humidity": humidity},
             timeout=5,
         )
         response.raise_for_status()  # fejl hvis serveren svarer 4xx/5xx
-        status = response.json()["status"]
-        sense.clear(COLORS[status])  # hele displayet i én farve
+        status = response.json()["status"]  # serverens beslutning: green/yellow/red
+        # 3. Farv hele displayet i den farve, serveren bestemte.
+        sense.clear(COLORS[status])
         print(f"{humidity} %RH -> {status}")
     except requests.RequestException as error:
+        # Ingen forbindelse, timeout eller fejlsvar: vis blå, og prøv igen næste gang.
         sense.clear(NO_CONNECTION)
         print(f"{humidity} %RH -> ingen forbindelse: {error}")
-    time.sleep(INTERVAL_SECONDS)
+    time.sleep(INTERVAL_SECONDS)  # vent 5 sekunder før næste måling

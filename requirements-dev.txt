@@ -1,2 +1,3 @@
-pytest==9.2.0
-httpx2==2.16.0
+# Kun til test (ikke i Docker-imaget).
+pytest==9.2.0   # kører testene i tests/
+httpx2==2.16.0  # bruges af FastAPIs TestClient til at kalde API'et i testene

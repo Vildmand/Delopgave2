@@ -18,7 +18,7 @@ Kun det, opgaven kræver, er bygget. Alt andet er flyttet til refleksionen som "
 
 | Krav | Løst i | Bevis |
 |---|---|---|
-| REST API, der kan tilgås fra remote computer (IoT device) | `main.py` med `--host 0.0.0.0`, `pi/pi.py` sender over netværket | Pi'en på 192.168.0.106 → PC på 192.168.0.104:8000 |
+| REST API, der kan tilgås fra remote computer (IoT device) | `main.py` med `--host 0.0.0.0`, `pi/pi.py` sender over netværket | Pi'en på 192.168.0.106 → PC på 192.168.0.103:8000 |
 | Håndtering af events (input → behandling → output) | `receive_measurement()` i `main.py` | Test 2–5, Postman 1–5 |
 | Logik relateret til domænet (validering, hændelse, beslutning) | Validering: `MeasurementIn` (0–100 %RH). Beslutning: `rules.py` | Test 1 og 422-svar ved forkerte data |
 | Persistering af domain events og output i **separat** database | PostgreSQL i sin egen container (`docker-compose.yml`), tabellerne i `db.py` | `psql`-udtræk i videoen |

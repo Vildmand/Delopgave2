@@ -44,7 +44,7 @@ Kopiér filen til Pi'en og start den med PC'ens IP-adresse:
 ```powershell
 scp pi\pi.py nicklas@NicklasRPI.local:~/
 ssh nicklas@NicklasRPI.local
-API_URL=http://192.168.0.104:8000 python3 pi.py
+API_URL=http://192.168.0.103:8000 python3 pi.py
 ```
 
 Pust på Sense HAT'en for at få fugten over 60 %RH. LED'en bliver rød, og alarmen dukker op i kontrolcentret.

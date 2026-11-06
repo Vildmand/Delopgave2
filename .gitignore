@@ -1,3 +1,4 @@
+# Filer, git skal ignorere: lokale miljøer, cache og den lokale SQLite-database.
 .venv/
 __pycache__/
 *.db
