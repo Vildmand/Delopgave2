@@ -12,7 +12,8 @@ Kun det, opgaven kræver, er bygget. Alt andet er flyttet til refleksionen som "
 | Event: Anomaly Detected | `rules.should_open_alarm()` → række i tabellen `alarm` |
 | Beslutning: threshold-check | `rules.status()` (55 / 60 %RH) |
 | Handling: alarm/notifikation | Alarm i kontrolcentret + LED på Pi'en skifter farve |
-| Forretningsbehov | Færre uventede stop: medarbejderen ser afvigelsen i tide (VS7 fra delopgave 1) |
+| Forretningsbehov | Færre uventede stop: medarbejderen ser afvigelsen i tide (VS7 fra delopgave 1). Målbare mål: rapportens tabel 3 |
+| Kobling til domænet | Bounded contexts *Enhed & Måling* og *Overvågning & Alarm* (rapportens figur 1) og teknisk arkitektur (figur 2) |
 
 ## Det tekniske produkt (afsnit 3)
 
