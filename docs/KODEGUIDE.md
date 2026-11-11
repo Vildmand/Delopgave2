@@ -66,6 +66,32 @@ Kun serveren træffer beslutninger. Pi'en og browseren viser bare, hvad serveren
 | CI/CD | `.github/workflows/ci.yml` (billede 11) |
 | Tilgås fra IoT-enhed | `pi/pi.py` (billede 6) + `--host 0.0.0.0` (billede 10) |
 
+### Fra delopgave 1 til koden: bounded contexts (rapportens afsnit 2)
+
+Event Storming i delopgave 1 gav fire *faser* (Device, Håndtering, Service case, Execution). En fase siger kun,
+*hvornår* noget sker. En **bounded context** er et område med eget ansvar og eget sprog. Vi har gjort faserne til
+fire contexts (figur 1 i rapporten, `docs/img/diagram-simpel-7-context-map.png`):
+
+| Context (type) | Eget sprog | I koden nu |
+|---|---|---|
+| Enhed & Måling (core) | enhed, måling, %RH, offline | `pi/pi.py`, `MeasurementIn`, tabellen `measurement` |
+| Overvågning & Alarm (core) | grøn/gul/rød, grænse, alarm, kvittering, normal igen | `rules.py`, tabellen `alarm`, `POST /alarms/{id}/ack`, `static/index.html` |
+| Servicesag (supporting) | sag, prioritet, SLA | Ikke bygget. Næste skridt: event-bus + Anti-Corruption Layer mod Business Central |
+| Feltservice (supporting) | arbejdsordre, tekniker, reservedel | Ikke bygget. Mobile Service App |
+
+**Sådan forklarer du det til eksamen:** "Ordet *alarm* betyder noget forskelligt i de to contexts. Hos os er det en
+tilstand med tre tidspunkter (`opened_at`, `acknowledged_at`, `closed_at`). I Servicesag er det bare anledningen til
+en sag med en frist. Derfor er de adskilt, og derfor stopper vores MVP ved kvitteringen."
+
+Relationerne (context map): Enhed & Måling → Overvågning & Alarm er *customer/supplier* med et fast JSON-format over
+REST (det er `POST /measurements`). Overvågning → Servicesag sker i målbilledet via hændelsen "alarm oprettet" på en
+event-bus. Over for Salesforce/Business Central (Kunde & Aftale) er vi *conformist*.
+
+**Teknisk arkitektur og mønstre** (figur 2, `docs/img/diagram-simpel-8-teknisk-arkitektur.png`):
+1 REST/API-first (`main.py`) · 2 lagdelt microservice: API-lag `main.py`, domænelag `rules.py`, persistens `db.py` ·
+3 database pr. service (PostgreSQL i egen container) · 4 edge gateway: Pi'en beslutter intet · 5 event-driven og
+6 Anti-Corruption Layer er målbillede · 7 CI/CD (`ci.yml`).
+
 ## 2. `rules.py`: reglen (hjertet)
 
 ![rules.py](img/01-rules.png)

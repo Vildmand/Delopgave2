@@ -14,8 +14,8 @@ Filerne ligger i zip-pakken i mapperne 1–5. I repoet ligger de samme ting i `d
 | # | I pakken | I repoet | Hvad det er |
 |---|---|---|---|
 | 1 | `1-praesentation/` | `docs/praesentation.pdf` / `.pptx` | 11 slides: hvad vi byggede og hvorfor. Talenoter under hver slide |
-| 2 | `2-rapport/` | `docs/RAPPORT.md` | Den endelige 7-siders rapport (pdf og docx). Bilag med kode og diagrammer |
-| 3 | `3-diagrammer/` | `docs/img/diagram-simpel-*.png` | 1 arkitektur · 2 regler og alarmflow · 3 én måling start-slut · 4 CI/CD · 5 datamodel · 6 vejen frem |
+| 2 | `2-rapport/` | `docs/RAPPORT.md` | Den endelige 7-siders rapport (pdf og docx), rettet efter feedbacken på delopgave 1: strategi og målbare mål, bounded contexts og teknisk arkitektur. Bilag med kode, diagrammer og begreber |
+| 3 | `3-diagrammer/` | `docs/img/diagram-simpel-*.png` | 1 deployment · 2 regler og alarmflow · 3 én måling start-slut · 4 CI/CD · 5 datamodel · 6 vejen frem · 7 bounded contexts og context map · 8 teknisk arkitektur og mønstre |
 | 4 | `4-dokumenter/KODEGUIDE` | `docs/KODEGUIDE.md` | Gennemgang af hver fil, og hvorfor koden er skrevet sådan |
 | 5 | `5-kodebilleder/` | `docs/img/01-…11-*.png` | De vigtigste kodestykker som billeder, klar til slides |
 | 6 | `4-dokumenter/KRAV` | `docs/KRAV.md` | Opgavens krav, og hvilken fil der opfylder hvert krav |
