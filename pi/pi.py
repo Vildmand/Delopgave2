@@ -32,7 +32,9 @@ sense = SenseHat()  # forbindelsen til Sense HAT'ens sensorer og LED-display
 
 while True:  # kør for evigt (stop med Ctrl+C)
     # 1. Læs fugten, og afrund til én decimal (fx 48.237... -> 48.2).
-    humidity = round(sense.get_humidity(), 1)
+    #    Sensoren kan vise lidt over 100, når man puster direkte på den. API'et
+    #    godtager kun 0-100 %RH, så min(..., 100.0) holder værdien inden for det gyldige.
+    humidity = min(round(sense.get_humidity(), 1), 100.0)
     try:
         # 2. Send målingen som JSON. timeout=5: giv op efter 5 sekunder uden svar.
         response = requests.post(
