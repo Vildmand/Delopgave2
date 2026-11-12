@@ -21,8 +21,8 @@ Kun det, opgaven kræver, er bygget. Alt andet er flyttet til refleksionen som "
 |---|---|---|
 | REST API, der kan tilgås fra remote computer (IoT device) | `main.py` med `--host 0.0.0.0`, `pi/pi.py` sender over netværket | Pi'en på 192.168.0.106 → PC på 192.168.0.103:8000 |
 | Håndtering af events (input → behandling → output) | `receive_measurement()` i `main.py` | Test 2–5, Postman 1–5 |
-| Logik relateret til domænet (validering, hændelse, beslutning) | Validering: `MeasurementIn` (0–100 %RH). Beslutning: `rules.py` | Test 1 og 422-svar ved forkerte data |
-| Persistering af domain events og output i **separat** database | PostgreSQL i sin egen container (`docker-compose.yml`), tabellerne i `db.py` | `psql`-udtræk i videoen |
+| Logik relateret til domænet (validering, hændelse, beslutning) | Validering: `MeasurementIn` (0–100 %RH). Beslutning: `rules.py` | Test 1 (farver, grænser og 422 ved forkerte data) |
+| Persistering af domain events og output i **separat** database | PostgreSQL i sin egen container (`docker-compose.yml`), tabellerne i `db.py` | `docker compose exec db psql -U fugt` i videoen |
 | CI/CD med GitHub Actions | `.github/workflows/ci.yml` | Grøn kørsel på GitHub |
 | Tech stack i lokal Docker container | `Dockerfile` + `docker-compose.yml` | `docker compose up --build` |
 | GitHub repo med REST API-kode og CI/CD-kode | Dette repo | |
@@ -48,5 +48,5 @@ og er beskrevet i rapportens refleksion.
 | Evne: følge hver enheds tilstand | `status()`: grøn < 55, gul 55–60, rød > 60 | `test_1_green_yellow_red` |
 | Event Storming: "Fejl rapporteret" → "Generer alert" | `should_open_alarm()`: rød → alarm | `test_2_alarm_created_over_60` |
 | Undgå alarmtræthed i kontrolcentret | Ingen ny alarm, mens en er åben | `test_3_no_duplicate_alarm` |
-| Medarbejderen tager ansvar for alarmen | `POST /alarms/{id}/ack` | `test_4_acknowledge` |
+| Medarbejderen tager ansvar for alarmen | `POST /alarms/{id}/ack` (409 hvis kvitteret eller lukket) | `test_4_acknowledge` |
 | Alarmen må ikke blinke ved grænsen (hysterese) | `should_close_alarm()`: lukkes først under 55 | `test_5_normalization_under_55` |

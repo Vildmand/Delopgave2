@@ -14,7 +14,7 @@ Delopgave2/
 ├── docs/
 │   ├── img/
 │   │   ├── 01-rules.png … 11-ci.png      kodeskærmbillederne i denne guide
-│   │   ├── diagram-simpel-1…6-*.png     arkitektur, alarmflow, sekvens, CI/CD, datamodel, vejen frem
+│   │   ├── diagram-simpel-1…8-*.png     arkitektur, alarmflow, sekvens, CI/CD, datamodel, vejen frem, context map, teknisk arkitektur
 │   │   └── README.md                    oversigt over diagrammerne
 │   ├── KODEGUIDE.md                     denne fil
 │   ├── KRAV.md                          opgavens krav → hvor de er løst
@@ -130,7 +130,7 @@ event-bus. Over for Salesforce/Business Central (Kunde & Aftale) er vi *conformi
 
 ![Kvittering](img/04-kvittering.png)
 
-**Hvorfor:** operatøren skal kunne sige "jeg har set den". 404 hvis alarmen ikke findes, 409 hvis den allerede er kvitteret. Kvittering lukker **ikke** alarmen; det gør kun normal fugt. Sådan kan man se forskel på "nogen har set det" og "problemet er væk".
+**Hvorfor:** operatøren skal kunne sige "jeg har set den". 404 hvis alarmen ikke findes, 409 hvis den allerede er kvitteret, eller hvis den allerede er lukket (normal igen), for så er der ikke længere noget at kvittere for. Kvittering lukker **ikke** alarmen; det gør kun normal fugt. Sådan kan man se forskel på "nogen har set det" og "problemet er væk".
 
 De andre endpoints er korte: `GET /measurements?limit=20` (1–100, ellers 422) og `GET /alarms` henter nyeste først, `GET /` sender kontrolcentret, og `/docs` er Swagger, som FastAPI laver automatisk.
 
@@ -153,6 +153,7 @@ De andre endpoints er korte: `GET /measurements?limit=20` (1–100, ellers 422) 
 - Pi'en er "dum": den måler, sender og viser svaret. Reglerne ligger kun på serveren, så de kan ændres uden at røre Pi'en.
 - `timeout=5` og `except requests.RequestException`: falder serveren ud, hænger Pi'en ikke. Den viser blå og prøver igen om 5 sekunder (fejlhåndtering).
 - `API_URL` sættes med en miljøvariabel, så samme script virker, selv om PC'ens IP skifter.
+- `min(..., 100.0)`: Sense HAT'en kan vise lidt over 100 %RH, når man puster direkte på den. API'et godtager kun 0–100, så Pi'en holder værdien på højst 100. Ellers ville et pust give 422 og blå LED.
 
 ## 6. `static/index.html`: kontrolcentret
 
@@ -170,6 +171,8 @@ De andre endpoints er korte: `GET /measurements?limit=20` (1–100, ellers 422) 
 
 **Hvorfor sådan:** hver test får en ny, tom database i hukommelsen (`sqlite://`). Testene påvirker ikke hinanden og kræver ikke Docker. `dependency_overrides` bytter den rigtige database ud med testdatabasen. Se tabellen *strategi → regel → test* i `KRAV.md`.
 
+**Testene prøver grænserne fra begge sider.** Test 1 tjekker 54,9 (grøn), 55 (gul), 60 (gul) og 60,1 (rød), og at 150 og -5 giver 422 uden at noget gemmes. Test 2 tjekker, at målingen er gemt sammen med alarmen, og at præcis 60 ikke giver alarm. Test 3 tjekker, at "ingen dublet" gælder pr. enhed (en anden Pi får sin egen alarm). Test 4 tjekker, at kvittering ikke lukker alarmen, og at en lukket alarm ikke kan kvitteres. Test 5 tjekker, at præcis 55 ikke lukker alarmen, men at 54,9 gør. Ændrer man en grænse eller et `<` til `<=` i `rules.py`, fejler mindst én test. Prøv det selv: ret `NORMAL_UNDER` til 50 og kør `pytest`.
+
 ## 8. Docker: `docker-compose.yml` og `Dockerfile`
 
 ![docker-compose.yml](img/09-docker-compose.png)
@@ -177,6 +180,7 @@ De andre endpoints er korte: `GET /measurements?limit=20` (1–100, ellers 422) 
 **Hvorfor sådan:**
 - To containere: `db` og `api`. Det er opgavens krav om en *separat* database.
 - `volumes: pgdata`: data overlever en genstart.
+- `db` har ingen `ports`: databasen kan kun nås af API'et inde i Dockers eget netværk og ikke fra resten af Wi-Fi-nettet. Man kigger i den med `docker compose exec db psql -U fugt`.
 - `healthcheck` + `condition: service_healthy`: API'et starter først, når databasen svarer. Ellers ville `create_tables()` fejle ved opstart.
 
 ![Dockerfile](img/10-dockerfile.png)
@@ -203,3 +207,41 @@ De andre endpoints er korte: `GET /measurements?limit=20` (1–100, ellers 422) 
 
 Opgaven kræver ikke disse ting, så de er udeladt og nævnt i rapportens refleksion som vejen frem:
 login/API-nøgler, migrationer (Alembic), lufttryk og rystelser som rigtige målinger, mørkt tema, deploy til cloud, monitorering ud over loggen.
+
+## Svære spørgsmål til eksamen, og hvad du svarer
+
+Spørgsmålene kommer fra en kritisk gennemgang af opgaven (en "bad cop"-bedømmer).
+
+**"Hvordan har I målt, at alarmen kommer i tide?"**
+Alarmen oprettes i samme kald, som målingen modtages i (test 2), så serveren har ingen forsinkelse. Pi'en måler hvert
+5. sekund, og kontrolcentret henter nye data hvert 3. sekund. Derfor ser medarbejderen alarmen efter højst ca. 8 sekunder.
+Det er regnet ud fra de to intervaller, ikke målt med stopur.
+
+**"Kan en alarm lukke uden at være kvitteret?"**
+Ja. Kvittering betyder "jeg har set den", og kun en normal måling lukker alarmen. Falder fugten hurtigt, lukker alarmen
+uden kvittering og kan ikke kvitteres bagefter (409). Derfor siger mål 4 i rapporten, at hvert skridt *får et tidspunkt,
+når det sker*, og ikke at alle alarmer bliver kvitteret. Hvor hurtigt der kvitteres, er mål 6, som kræver en pilot.
+
+**"Hvad beviser jeres tests om hysteresen?"**
+Test 5 sender 62 (alarm), 57 og præcis 55 (alarmen er stadig åben) og til sidst 54,9 (alarmen lukker). Ændrer man 55
+til en anden værdi eller `<` til `<=`, fejler testen.
+
+**"I har to core contexts, men én service og én database. Hvor går grænsen?"**
+Grænsen går mellem *modtagelsen* af målingen (`MeasurementIn` og tabellen `measurement`, context'en Enhed & Måling) og
+*vurderingen* af den (`rules.py` og tabellen `alarm`, context'en Overvågning & Alarm). I MVP'en bor de i samme service,
+fordi de er små, og fordi måling og alarm skal gemmes i samme transaktion. Med mange enheder ville modtagelsen blive sin
+egen service, som sender målingerne videre som hændelser.
+
+**"Hvorfor hedder feltet `closed_at`, når I siger 'normal igen'?"**
+Koden er skrevet på engelsk og rapporten på dansk. Det er samme begreb: `opened_at` = åbnet, `acknowledged_at` =
+kvitteret, `closed_at` = normal igen (i kontrolcentret står der "normaliseret"). "Medarbejderen" i rapporten er
+"operatøren" i kodekommentarerne.
+
+**"Er det her lagdelt arkitektur?"**
+I lille skala: `main.py` er API-laget, `rules.py` er domænelaget og kender hverken database eller HTTP, og `db.py` er
+datalaget. Databaseforespørgslen efter en åben alarm står dog i `main.py`. I den store udgave (RaspPI-repoet) ligger
+den i et repository-lag. Det har vi fravalgt her for at holde koden på tre filer.
+
+**"Hvad sker der, hvis to røde målinger kommer i samme øjeblik?"**
+Så kan der i teorien blive to åbne alarmer, fordi vi har fravalgt låsning (se "Bevidst fravalgt" i `KRAV.md`). Med én
+Pi, der sender hvert 5. sekund, sker det ikke. Den store udgave løser det med en rækkelås.

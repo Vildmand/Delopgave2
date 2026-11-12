@@ -11,12 +11,12 @@ En medarbejder ser alarmen i kontrolcentret og kvitterer.
 
 | Fil | Hvad den gør | Linjer |
 |---|---|---|
-| `main.py` | REST API'et: 4 endpoints + kontrolcentret | ca. 100 |
-| `rules.py` | Reglerne: grøn/gul/rød, åbn og luk alarm | ca. 40 |
-| `db.py` | Databasen: tabellerne `measurement` og `alarm` | ca. 50 |
-| `static/index.html` | Kontrolcentret: live fugt, alarmer, Kvittér-knap, grå mockup for fase 2 | ca. 130 |
-| `pi/pi.py` | Programmet på Pi'en: læs fugt, send, farv LED | ca. 45 |
-| `tests/test_mvp.py` | De 5 tests | ca. 65 |
+| `main.py` | REST API'et: 4 endpoints + kontrolcentret | ca. 145 (60 uden kommentarer) |
+| `rules.py` | Reglerne: grøn/gul/rød, åbn og luk alarm | ca. 50 (12 uden kommentarer) |
+| `db.py` | Databasen: tabellerne `measurement` og `alarm` | ca. 70 (23 uden kommentarer) |
+| `static/index.html` | Kontrolcentret: live fugt, alarmer, Kvittér-knap, grå mockup for fase 2 | ca. 135 |
+| `pi/pi.py` | Programmet på Pi'en: læs fugt, send, farv LED | ca. 55 (26 uden kommentarer) |
+| `tests/test_mvp.py` | De 5 tests | ca. 105 |
 | `postman/` | Postman-samling med 5 kald (hele alarmflowet) | |
 | `Dockerfile`, `docker-compose.yml` | Kør API + PostgreSQL i hver sin container | |
 | `.github/workflows/ci.yml` | CI/CD på GitHub Actions | |
@@ -68,7 +68,7 @@ Postman: importér `postman/fugt-mvp.postman_collection.json` og tryk **Run coll
 | POST | `/measurements` | Pi'en sender `{"device_id": "pi-01", "humidity": 48.2}`. Svar: `{"status": "green", "alarm_open": false}` |
 | GET | `/measurements` | De seneste målinger (nyeste først) |
 | GET | `/alarms` | De seneste alarmer |
-| POST | `/alarms/{id}/ack` | Kvittér for en alarm (404 hvis den ikke findes, 409 hvis allerede kvitteret) |
+| POST | `/alarms/{id}/ack` | Kvittér for en alarm (404 hvis den ikke findes, 409 hvis allerede kvitteret eller lukket) |
 
 ## CI/CD
 

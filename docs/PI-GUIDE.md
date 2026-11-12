@@ -8,7 +8,7 @@ Forudsætning: Docker-stakken kører på PC'en (`docker compose up -d` i projekt
 ipconfig
 ```
 
-Brug **IPv4 Address** under Wi-Fi, fx `192.168.0.104`.
+Brug **IPv4 Address** under Wi-Fi, fx `192.168.0.103`.
 Tjek fra PC'en, at API'et svarer: `curl.exe http://<IP>:8000/alarms` skal give `[]` eller en liste.
 
 ## 2. Kopiér pi.py til Pi'en (PowerShell, i projektmappen)
@@ -23,7 +23,7 @@ scp pi\pi.py nicklas@NicklasRPI.local:~/
 ssh nicklas@NicklasRPI.local
 ```
 
-Stop først den gamle klient, hvis den kører (Ctrl+C i dens vindue, eller `pkill -f sensor_client`).
+Stop først en ældre udgave, hvis den kører (Ctrl+C i dens vindue, eller `pkill -f pi.py`).
 Start så den nye:
 
 ```bash
@@ -48,4 +48,5 @@ Stop med Ctrl+C.
 | LED'en er blå, og der står "ingen forbindelse" | Forkert IP, eller Windows Firewall blokerer port 8000. Tjek IP'en med `ipconfig`, og test fra Pi'en: `curl http://<IP>:8000/alarms` |
 | `ModuleNotFoundError: sense_hat` | `sudo apt install sense-hat` |
 | `ModuleNotFoundError: requests` | `sudo apt install python3-requests` |
+| LED'en er blå, og der står `422` i fejlen | Pi'en kører en ældre `pi.py`, og sensoren viste over 100 %RH. Kopiér den nye `pi.py` (trin 2), som holder målingen på højst 100 |
 | `ssh: Could not resolve hostname` | Brug Pi'ens IP i stedet, fx `nicklas@192.168.0.106` |
