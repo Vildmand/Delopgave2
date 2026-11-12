@@ -23,7 +23,7 @@ Filerne ligger i zip-pakken i mapperne 1–5. I repoet ligger de samme ting i `d
 | 8 | `4-dokumenter/VIDEOMANUSKRIPT` | `docs/VIDEOMANUSKRIPT.md` | Hvad der vises og siges i den ca. 5 minutter lange video |
 
 Koden: https://github.com/Vildmand/Delopgave2 ·
-Grøn CI-kørsel: https://github.com/Vildmand/Delopgave2/actions/runs/42225474539
+Grøn CI-kørsel: https://github.com/Vildmand/Delopgave2/actions/runs/43131875396
 
 ## Kør det selv
 
