@@ -14,7 +14,7 @@ Endpoints:
     POST /measurements          modtag en måling fra Pi'en
     GET  /measurements          de seneste målinger (til kontrolcentret)
     GET  /alarms                de seneste alarmer
-    POST /alarms/{id}/ack       operatøren kvitterer for en alarm
+    POST /alarms/{id}/ack       operatøren kvitterer for en åben alarm
     GET  /                      kontrolcentret (static/index.html)
     GET  /docs                  Swagger: automatisk API-dokumentation fra FastAPI
 
@@ -128,6 +128,9 @@ def acknowledge_alarm(alarm_id: int, session: Session = Depends(get_session)):
         raise HTTPException(404, "Alarmen findes ikke")  # 404 = Not Found
     if alarm.acknowledged_at is not None:
         raise HTTPException(409, "Alarmen er allerede kvitteret")  # 409 = Conflict
+    if alarm.closed_at is not None:
+        # Fugten er allerede normal igen: der er ikke længere noget at kvittere for.
+        raise HTTPException(409, "Alarmen er allerede lukket (normal igen)")
     alarm.acknowledged_at = now()  # kvittering lukker IKKE alarmen; det gør kun normal fugt
     session.commit()  # gem ændringen
     session.refresh(alarm)  # hent rækken igen, så svaret viser de gemte værdier

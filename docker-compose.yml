@@ -10,8 +10,8 @@ services:
       POSTGRES_USER: fugt
       POSTGRES_PASSWORD: fugt  # kun til lokal demo, aldrig i produktion
       POSTGRES_DB: fugt
-    ports:
-      - "5432:5432"  # så man kan kigge i databasen med psql
+    # Ingen "ports" her: databasen kan kun nås af API'et inde i Dockers eget netværk,
+    # ikke fra resten af Wi-Fi-nettet. Kig i den med: docker compose exec db psql -U fugt
     volumes:
       - pgdata:/var/lib/postgresql/data  # dataene gemmes uden for containeren
     healthcheck:  # API'et venter, til databasen svarer
