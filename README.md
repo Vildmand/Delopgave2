@@ -18,7 +18,8 @@ En medarbejder ser alarmen i kontrolcentret og kvitterer.
 | `pi/pi.py` | Programmet på Pi'en: læs fugt, send, farv LED | ca. 55 (26 uden kommentarer) |
 | `tests/test_mvp.py` | De 5 tests | ca. 105 |
 | `postman/` | Postman-samling med 5 kald (hele alarmflowet) | |
-| `Dockerfile`, `docker-compose.yml` | Kør API + PostgreSQL i hver sin container | |
+| `Dockerfile`, `docker-compose.yml` | Kør API, PostgreSQL og Grafana i hver sin container | |
+| `grafana/` | Grafana-dashboard som kode: fugt over tid, åbne alarmer, MTTA, sensor-liveness | |
 | `.github/workflows/ci.yml` | CI/CD på GitHub Actions | |
 | `docs/` | START-HER (overblik på én side), præsentation, KODEGUIDE (forklaring af koden), KRAV (opgavens krav → fil), PI-GUIDE og rapport | |
 
@@ -36,6 +37,7 @@ docker compose up --build
 
 - Kontrolcentret: http://localhost:8000
 - Swagger (API-dokumentation): http://localhost:8000/docs
+- Grafana (overvågning af driften, ingen login): http://localhost:3000
 
 Stop med `Ctrl+C`. Slet også databasen med `docker compose down -v`.
 
@@ -72,7 +74,7 @@ Postman: importér `postman/fugt-mvp.postman_collection.json` og tryk **Run coll
 
 ## CI/CD
 
-GitHub Actions kører: pip-audit (sårbarheder) → de 5 tests → byg og start Docker (API + PostgreSQL) → Postman via Newman.
+GitHub Actions kører: pip-audit (sårbarheder) → de 5 tests → byg og start Docker (API + PostgreSQL + Grafana) → Postman via Newman → tjek at Grafana kører og har dashboardet.
 Den kører automatisk ved hvert push til `main` og ved pull requests. Den kan også startes i hånden under **Actions → CI → Run workflow**.
 
 ## Den store udgave

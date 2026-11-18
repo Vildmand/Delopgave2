@@ -10,10 +10,17 @@ Billederne herunder er taget af den rigtige kode med de rigtige linjenumre.
 Delopgave2/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                       CI/CD: pip-audit → pytest → Docker → Newman
+│       └── ci.yml                       CI/CD: pip-audit → pytest → Docker → Newman → Grafana-tjek
+├── grafana/
+│   ├── dashboards/
+│   │   └── fugt-mvp.json                dashboardet som kode: 9 paneler med SQL mod PostgreSQL
+│   └── provisioning/
+│       ├── dashboards/dashboards.yml    fortæller Grafana, hvor dashboard-filerne ligger
+│       └── datasources/postgres.yml     forbindelsen fra Grafana til databasen "db"
 ├── docs/
 │   ├── img/
 │   │   ├── 01-rules.png … 11-ci.png      kodeskærmbillederne i denne guide
+│   │   ├── grafana.png                  skærmbillede af Grafana-dashboardet
 │   │   ├── diagram-simpel-1…8-*.png     arkitektur, alarmflow, sekvens, CI/CD, datamodel, vejen frem, context map, teknisk arkitektur
 │   │   └── README.md                    oversigt over diagrammerne
 │   ├── KODEGUIDE.md                     denne fil
@@ -33,7 +40,7 @@ Delopgave2/
 ├── Dockerfile                           opskriften på API'ets container
 ├── README.md                            forsiden på GitHub: kom i gang + endpoints
 ├── db.py                                databasen: tabellerne measurement og alarm
-├── docker-compose.yml                   starter API + PostgreSQL som to containere
+├── docker-compose.yml                   starter API + PostgreSQL + Grafana som tre containere
 ├── main.py                              REST API'et (FastAPI): de 4 endpoints
 ├── pytest.ini                           fortæller pytest, hvor koden ligger
 ├── requirements-dev.txt                 pakker kun til test
@@ -51,9 +58,10 @@ Pi (pi.py)  --POST fugt-->  API (main.py)  --spørger-->  regler (rules.py)
      |  svar: green/yellow/red  +--gemmer-->  PostgreSQL (db.py: measurement + alarm)
      +--------------------------+
 Browser (index.html) --GET målinger/alarmer, POST kvittering--> API
+Grafana (port 3000)  --læser (SELECT) direkte fra-->  PostgreSQL
 ```
 
-Kun serveren træffer beslutninger. Pi'en og browseren viser bare, hvad serveren har sagt.
+Kun serveren træffer beslutninger. Pi'en, browseren og Grafana viser bare, hvad serveren har sagt.
 
 | Opgavens krav | Hvor i koden |
 |---|---|
@@ -178,7 +186,7 @@ De andre endpoints er korte: `GET /measurements?limit=20` (1–100, ellers 422) 
 ![docker-compose.yml](img/09-docker-compose.png)
 
 **Hvorfor sådan:**
-- To containere: `db` og `api`. Det er opgavens krav om en *separat* database.
+- Tre containere: `db`, `api` og `grafana`. `db` er opgavens krav om en *separat* database; `grafana` er overvågningen (afsnit 10).
 - `volumes: pgdata`: data overlever en genstart.
 - `db` har ingen `ports`: databasen kan kun nås af API'et inde i Dockers eget netværk og ikke fra resten af Wi-Fi-nettet. Man kigger i den med `docker compose exec db psql -U fugt`.
 - `healthcheck` + `condition: service_healthy`: API'et starter først, når databasen svarer. Ellers ville `create_tables()` fejle ved opstart.
@@ -198,15 +206,56 @@ De andre endpoints er korte: `GET /measurements?limit=20` (1–100, ellers 422) 
 
 1. **pip-audit**: kendte sikkerhedshuller i pakkerne (DevSecOps).
 2. **pytest**: de 5 tests.
-3. **Docker**: byg og start præcis den stak, der kører på PC'en.
+3. **Docker**: byg og start præcis den stak, der kører på PC'en (API + PostgreSQL + Grafana).
 4. **Newman**: de 5 Postman-kald mod den kørende stak, med rigtig PostgreSQL.
+5. **Grafana**: `/api/health` skal svare, og søgningen efter "Fugt" skal finde dashboardet `fugt-mvp`. Så ved vi, at dashboard-filen er gyldig og blev indlæst.
 
-`permissions: contents: read` giver CI mindst mulige rettigheder. Fejler noget, vises API'ets log.
+`permissions: contents: read` giver CI mindst mulige rettigheder. Fejler noget, vises API'ets og Grafanas log.
 
-## 10. Hvad er bevidst IKKE med (bare minimum)
+## 10. Grafana: overvågning af driften (`grafana/`)
+
+![Grafana-dashboardet](img/grafana.png)
+
+Åbn http://localhost:3000 (ingen login; man kan kun se, ikke ændre). Dashboardet "Fugt-MVP: overvågning" er forsiden.
+
+**Hvordan det virker:** Grafana er en færdig container (`grafana/grafana:11.4.0`). Der er **ingen ny Python-kode**.
+Grafana læser selv direkte fra de to tabeller `measurement` og `alarm` med almindelig SQL. Alt er sat op med filer
+(*provisioning* = "opsætning som kode"), så dashboardet er det samme hver gang, også i CI:
+
+- `provisioning/datasources/postgres.yml`: hvordan Grafana når databasen (`db:5432`, inde i Dockers netværk).
+- `provisioning/dashboards/dashboards.yml`: "læs dashboards fra mappen `/var/lib/grafana/dashboards`".
+- `dashboards/fugt-mvp.json`: selve dashboardet. Hvert panel har én SQL-forespørgsel (`rawSql`). Opdaterer hvert 5. sekund.
+
+**De 9 paneler, og hvorfor de er der:**
+
+| Panel | SQL i korte træk | Hvad det svarer på |
+|---|---|---|
+| Seneste fugt | nyeste `humidity` | Hvordan står det til lige nu? Farve: grøn < 55, gul 55–60, rød > 60 (samme grænser som `rules.py`) |
+| Åbne alarmer | `count(*) WHERE closed_at IS NULL` | Er der noget, der skal handles på? |
+| Sekunder siden seneste måling | `now() - max(received_at)` | Lever Pi'en? Gul efter 10 s, rød efter 15 s (Pi'en sender hvert 5. s). Fanger en død sensor, som kontrolcentret ikke viser |
+| Alarmer i perioden | `count(*)` i den valgte tidsperiode | Hvor ofte sker det? |
+| Fugt over tid | `received_at, humidity` pr. enhed | Kurven med stiplede linjer ved 55 og 60 |
+| MTTA (median) | median af `acknowledged_at - opened_at` | Mål 6: hvor hurtigt kvitterer medarbejderen? (Mean Time To Acknowledge) |
+| Tid til normal (median) | median af `closed_at - opened_at` | Hvor længe varer en alarm? (tæt på MTTR, Mean Time To Resolve) |
+| Lukket uden kvittering | lukkede alarmer uden `acknowledged_at` | Alarmer, ingen nåede at se |
+| Alarmer (tabel) | de 20 nyeste alarmer + tilstand | Hele forløbet: åbnet → kvitteret → normal igen |
+
+**Hvorfor sådan:**
+- **Hvorfor Grafana, når vi har kontrolcentret?** Kontrolcentret er til *medarbejderen*, der skal kvittere for én alarm.
+  Grafana er til *driften*: hvordan går det over tid, og hvor hurtigt reagerer vi? Det er forskellen på monitorering og
+  observability (Goniwada 2021, kap. 19).
+- **Hvorfor læse direkte fra databasen?** Tidsstemplerne `opened_at`, `acknowledged_at` og `closed_at` findes allerede.
+  MTTA og tid til normal er bare forskellen mellem dem. Ingen ny kode, ingen ny database.
+- **Hvorfor median og ikke gennemsnit?** Én alarm, der blev glemt natten over, ville trække gennemsnittet helt skævt.
+- **Sikkerhed:** anonyme brugere er kun `Viewer`, og `editable: false` + `:ro` (read-only) på mapperne betyder, at
+  dashboardet ikke kan ændres fra browseren. Kodeordet `fugt` er kun til lokal demo, ligesom i `docker-compose.yml`.
+  I produktion skulle Grafana have sin egen databasebruger, der kun må læse.
+
+## 11. Hvad er bevidst IKKE med (bare minimum)
 
 Opgaven kræver ikke disse ting, så de er udeladt og nævnt i rapportens refleksion som vejen frem:
-login/API-nøgler, migrationer (Alembic), lufttryk og rystelser som rigtige målinger, mørkt tema, deploy til cloud, monitorering ud over loggen.
+login/API-nøgler, migrationer (Alembic), lufttryk og rystelser som rigtige målinger, mørkt tema, deploy til cloud,
+alarmering fra Grafana (fx SMS/mail ved rød), og logs/traces i Grafana (Loki/Tempo).
 
 ## Svære spørgsmål til eksamen, og hvad du svarer
 

@@ -1,7 +1,8 @@
 # CI/CD: tjekker og bygger løsningen automatisk på GitHub Actions.
 #
 # Trin: 1) sårbarhedstjek af pakker  2) de 5 tests  3) byg Docker-imaget og
-# start hele stakken (API + PostgreSQL)  4) kør Postman-testene mod den kørende stak.
+# start hele stakken (API + PostgreSQL + Grafana)  4) kør Postman-testene mod den kørende stak
+# 5) tjek at Grafana kører og har indlæst dashboardet.
 # Fejler ét trin, stopper kørslen, og GitHub viser et rødt kryds ved committet.
 #
 # Kører automatisk ved hvert push til main og ved pull requests.
@@ -39,7 +40,7 @@ jobs:
         run: pytest -v
       # Byg og start præcis det samme, som kører på PC'en. curl venter (op til ~30 s),
       # til API'et svarer, før vi går videre.
-      - name: Deploy - byg og start API + PostgreSQL i Docker
+      - name: Deploy - byg og start API + PostgreSQL + Grafana i Docker
         run: |
           docker compose up -d --build
           curl --retry 15 --retry-delay 2 --retry-all-errors -fsS http://localhost:8000/alarms
@@ -47,6 +48,12 @@ jobs:
       - name: Postman - kør collectionen mod den kørende løsning
         run: npx --yes newman@6 run postman/fugt-mvp.postman_collection.json
       # Kun hvis noget fejlede: vis API'ets log, så man kan se hvorfor (logging/fejlfinding).
-      - name: Vis API-loggen, hvis noget fejlede
+      # Observability: Grafana skal svare, og dashboardet "Fugt-MVP" skal være indlæst
+      # fra grafana/dashboards/ (dashboard som kode). grep -q fejler trinnet, hvis det mangler.
+      - name: Grafana - kører og har indlæst dashboardet
+        run: |
+          curl --retry 15 --retry-delay 2 --retry-all-errors -fsS http://localhost:3000/api/health
+          curl -fsS "http://localhost:3000/api/search?query=Fugt" | grep -q '"uid":"fugt-mvp"'
+      - name: Vis API- og Grafana-loggen, hvis noget fejlede
         if: failure()
-        run: docker compose logs api
+        run: docker compose logs api grafana

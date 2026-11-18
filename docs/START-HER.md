@@ -33,7 +33,7 @@ Kræver Docker Desktop. I repo-mappen:
 docker compose up --build
 ```
 
-Åbn http://localhost:8000 (kontrolcentret) og http://localhost:8000/docs (Swagger). Stop med `Ctrl+C`.
+Åbn http://localhost:8000 (kontrolcentret), http://localhost:8000/docs (Swagger) og http://localhost:3000 (Grafana). Stop med `Ctrl+C`.
 `docker compose down -v` sletter også databasen.
 
 På Pi'en (udskift IP med PC'ens IP på samme Wi-Fi):

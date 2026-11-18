@@ -26,6 +26,7 @@ Kun det, opgaven kræver, er bygget. Alt andet er flyttet til refleksionen som "
 | CI/CD med GitHub Actions | `.github/workflows/ci.yml` | Grøn kørsel på GitHub |
 | Tech stack i lokal Docker container | `Dockerfile` + `docker-compose.yml` | `docker compose up --build` |
 | GitHub repo med REST API-kode og CI/CD-kode | Dette repo | |
+| Observability (Forløb 4, ikke et krav i opgaveteksten) | Grafana-container + `grafana/` (dashboard som kode) læser `measurement` og `alarm` | http://localhost:3000, CI-trinnet "Grafana" |
 
 ## Demonstration (afsnit 4, video)
 

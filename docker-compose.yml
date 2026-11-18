@@ -1,5 +1,6 @@
 # Start hele løsningen: docker compose up --build
-# To containere: "db" (PostgreSQL, databasen) og "api" (vores FastAPI-kode).
+# Tre containere: "db" (PostgreSQL, databasen), "api" (vores FastAPI-kode)
+# og "grafana" (dashboard, der kun læser fra databasen).
 # Databasen er altså adskilt fra API'et, og data overlever en genstart (volume "pgdata").
 # Stop: docker compose down   (tilføj IKKE -v, for så slettes dataene)
 services:
@@ -30,6 +31,24 @@ services:
     depends_on:
       db:
         condition: service_healthy   # start først API'et, når healthchecket er grønt
+
+  # --- Container 3: Grafana (overvågning) -------------------------------------
+  # Læser direkte fra PostgreSQL og viser fugt over tid, åbne alarmer og MTTA.
+  # Datakilde og dashboard ligger som filer i grafana/ ("dashboard as code").
+  grafana:
+    image: grafana/grafana:11.4.0   # fast version, så det kører ens hver gang
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"   # dashboardet kan ses uden login ...
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer  # ... men kun læses, ikke ændres
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/fugt-mvp.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro  # datakilde + hvor dashboards ligger
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro  # selve dashboardet (JSON)
+    ports:
+      - "3000:3000"  # åbn http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
 
 # Navngivet volume: Dockers egen lagerplads til databasens filer.
 volumes:
