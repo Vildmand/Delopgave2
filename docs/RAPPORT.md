@@ -16,39 +16,17 @@ lang: da-DK
 
 # Fra sensor til alarm: Fugtovervågning hos IIS {.unnumbered .del}
 
-**Rapportens røde tråd.** Rapporten følger én linje fra forretning til kode: Afsnit 1 begrunder ud fra strategien, hvorfor vi løser netop dette problem, og hvilke målbare mål løsningen skal nå. Afsnit 2 tager skridtet fra Event Storming i delopgave 1 til bounded contexts, et context map og en teknisk arkitektur. Afsnit 3 viser koden, der realiserer de valgte contexts, og afsnit 4 og 5 viser, hvordan den testes og køres automatisk. Afsnit 6 holder resultatet op mod målene. Fagord er forklaret i bilag D.
+**Rapportens røde tråd.** Rapporten følger én linje fra forretning til kode: Afsnit 1 begrunder ud fra strategien, hvorfor vi løser netop dette problem, og hvilke målbare mål løsningen skal nå. Afsnit 2 tager skridtet fra Event Storming i delopgave 1 til bounded contexts, et context map og en teknisk arkitektur. Afsnit 3 viser koden, der realiserer de valgte contexts, og afsnit 4 og 5 viser, hvordan den testes og køres automatisk. Afsnit 6 holder resultatet op mod målene. Alle tabeller og figurer står samlet i bilag E, og fagord er forklaret i bilag D.
 
 ## 1. Problem og domæne
 
 ### 1.1. Strategisk udgangspunkt: fra case til value stream
 
-Intelligent IoT Solutions A/S, som vi kalder IIS, sælger IoT-enheder (Internet of Things: sensorer og maskiner, der sender data over internettet) til energisektoren. IIS har tre strategiske fokusområder, og det første er *værdiskabelse gennem datadrevet drift og service* (Casebeskrivelse, 2026). Det nye forretningsområde *Managed Services*, hvor IIS overvåger kundernes anlæg døgnet rundt fra et kontrolcenter i Aalborg, skal stå for mindst 10 % af omsætningen inden for fem år. I Business Model Canvas-termer (Osterwalder og Pigneur, 2010) er det en ny indtægtsstrøm (et abonnement) til kundesegmentet energiselskaber med egne anlæg. Den leveres gennem kontrolcentret som kanal og bygger på IIS' vigtigste ressourcer: egne enheder, data og kontrolcentret. Tabel 1 viser med et Value Proposition Canvas (Osterwalder et al., 2014), hvad kunden med en Managed Services-aftale har brug for, og hvordan MVP'en svarer på det.
-
-| Kundeprofil (B2B-kunde med Managed Services-aftale) | Værdiforslag: sådan svarer MVP'en |
-|---|---|
-| **Opgave:** holde anlægget, fx en vindmølle, kørende og producerende | Måler tilstanden løbende og viser den i kontrolcentret |
-| **Smerte:** uplanlagte stop, fordi fugt giver rust og kortslutning, som opdages for sent | Alarm ved første kritiske måling, før skaden sker |
-| **Smerte:** alarmtræthed, når samme fejl giver mange alarmer | Højst én åben alarm ad gangen og hysterese ved grænsen |
-| **Gevinst:** højere oppetid og dokumentation for den | Alle målinger og alarmer gemmes med tidspunkter |
-
-::: {custom-style="Billedtekst"}
-(Tabel 1, egen fremstilling (2026): Value Proposition Canvas for Managed Services-kunden, koblet til MVP'en)
-:::
+Intelligent IoT Solutions A/S, som vi kalder IIS, sælger IoT-enheder (Internet of Things: sensorer og maskiner, der sender data over internettet) til energisektoren. IIS har tre strategiske fokusområder, og det første er *værdiskabelse gennem datadrevet drift og service* (Casebeskrivelse, 2026). Det nye forretningsområde *Managed Services*, hvor IIS overvåger kundernes anlæg døgnet rundt fra et kontrolcenter i Aalborg, skal stå for mindst 10 % af omsætningen inden for fem år. I Business Model Canvas-termer (Osterwalder og Pigneur, 2010) er det en ny indtægtsstrøm (et abonnement) til kundesegmentet energiselskaber med egne anlæg. Den leveres gennem kontrolcentret som kanal og bygger på IIS' vigtigste ressourcer: egne enheder, data og kontrolcentret. Tabel 1 i bilag E viser med et Value Proposition Canvas (Osterwalder et al., 2014), hvad kunden med en Managed Services-aftale har brug for, og hvordan MVP'en svarer på det.
 
 **Hvorfor value stream VS7?** En value stream er de trin, en kunde går igennem for at få et resultat. I delopgave 1 valgte vi VS7: *Få anlæg overvåget og vedligeholdt proaktivt*. Valget hviler på en optælling, hvor vi holdt VS7 op mod de seks andre value streams og talte, hvor mange L2- og L3-capabilities (forretningsevner på niveau 2 og 3) fra de otte udvalgte L1-capabilities hver af dem bruger (Delopgave 1, 2026, s. 6). VS7 bruger flest, nemlig 18, foran VS1 (15), VS2 og VS6 (11), VS3 (9), VS4 (7) og VS5 (6). VS7 er altså den value stream, hvor strategien rammer flest vigtige evner på én gang, og den er direkte knyttet til vækstmålet for Managed Services. MVP'en dækker de to trin i VS7, som alt andet afhænger af: *Få anlægget overvåget i realtid* og *Blive varslet om afvigelser i tide*.
 
-**Capabilities går på tværs af value streams.** Tabel 2 viser, at de capabilities, MVP'en bygger, ikke kun bruges i VS7. Measurement Management indgår i fire value streams og Device Management i seks. En fælles tjeneste til målinger og alarmer kan derfor genbruges af andre value streams, fx VS2 og VS3. Det gør evnerne strategisk vigtige flere steder og er et argument for at bygge dem først (Business Architecture Guild, u.å.).
-
-| Capability (L1) | Bruges i | Det bygger MVP'en (L2/L3) |
-|---|---|---|
-| Measurement Management | VS2, VS3, VS4, VS7 | Measurement Collection, Anomaly Detection, Dashboard Provisioning |
-| Device Management | VS1, VS2, VS3, VS5, VS6, VS7 | Device Status Monitoring (farven på Pi'en og seneste måling) |
-| Asset Management | VS3, VS4, VS7 | Alert Management (alarm, kvittering, normal igen) |
-| Service Management | VS1, VS2, VS6, VS7 | Ikke bygget, næste skridt (servicesag, afsnit 6.3) |
-
-::: {custom-style="Billedtekst"}
-(Tabel 2, egen fremstilling (2026) ud fra optællingen i delopgave 1: De fire centrale capabilities og de value streams, de indgår i)
-:::
+**Capabilities går på tværs af value streams.** Tabel 2 i bilag E viser, at de capabilities, MVP'en bygger, ikke kun bruges i VS7. Measurement Management indgår i fire value streams og Device Management i seks. En fælles tjeneste til målinger og alarmer kan derfor genbruges af andre value streams, fx VS2 og VS3. Det gør evnerne strategisk vigtige flere steder og er et argument for at bygge dem først (Business Architecture Guild, u.å.).
 
 ### 1.2. Problemformulering og målbare mål
 
@@ -56,22 +34,7 @@ Opgaven beder os om scenariet *Predictive Maintenance / notifikation* med hænde
 
 Problemstillingen er: *Hvordan kan IIS med en lille webtjeneste gøre målinger fra sensorer til alarmer, som medarbejderne kan handle på i tide, og hvordan kan løsningen bygges, testes og startes automatisk?*
 
-Tabel 3 gør "i tide" og "kan handle på" målbart. Mål 1–5 er eftervist på MVP'en med de tests og kørsler, der står i sidste kolonne. Mål 6–8 er vores forslag til, hvad IIS skal måle i en pilot hos en rigtig kunde.
-
-| Mål | Sådan måles det | Status |
-|---|---|---|
-| 1. En kritisk måling giver alarm med det samme | Alarmen oprettes i samme kald som målingen. Den ses i kontrolcentret efter højst ca. 8 sek. (måling hvert 5. og opdatering hvert 3. sek.) | Opfyldt: test 2. De 8 sek. følger af de to intervaller |
-| 2. Ingen alarmstøj | Ekstra alarmer ved gentagne røde målinger fra samme enhed: 0 | Opfyldt (test 3) |
-| 3. Ingen halve data | Måling og alarm gemmes samlet i én transaktion (ét `commit`) | Opfyldt: test 2 og kodeuddrag 4 |
-| 4. Ansvar kan ses | Hvert skridt i alarmens liv får sit eget tidspunkt: åbnet, kvitteret og normal igen | Opfyldt (test 4 og 5) |
-| 5. Hurtig og sikker levering | Automatisk kontrol pr. ændring: under 2 min. | Opfyldt: 50 sek. (kørsel 12) |
-| 6. Kort reaktionstid | Median fra alarm til kvittering (`opened_at` → `acknowledged_at`): under 15 min. | Pilot |
-| 7. Færre uplanlagte stop | Stop pga. fugt over 12 måneder mod året før: 30 % færre | Pilot |
-| 8. Vækst i Managed Services | Mindst 10 % af omsætningen inden for fem år (Casebeskrivelse, 2026) | Strategisk mål |
-
-::: {custom-style="Billedtekst"}
-(Tabel 3, egen fremstilling (2026): Målbare mål for løsningen. Grænserne i mål 6 og 7 er vores foreslåede mål)
-:::
+Tabel 3 i bilag E gør "i tide" og "kan handle på" målbart. Mål 1–5 er eftervist på MVP'en med de tests og kørsler, der står i sidste kolonne. Mål 6–8 er vores forslag til, hvad IIS skal måle i en pilot hos en rigtig kunde.
 
 ### 1.3. Afgrænsning
 
@@ -81,13 +44,7 @@ Kun luftfugtighed bliver målt rigtigt. Lufttryk og rystelser vises som grå kor
 
 ### 2.1. Fra Event Storming til bounded contexts
 
-I delopgave 1 brugte vi Event Storming, en workshopmetode hvor alle hændelser i en proces sættes op på en tidslinje (Brandolini, 2013). Den gav fire procesfaser: Device, Håndtering, Service case og Execution (Delopgave 1, 2026). En fase siger dog kun, *hvornår* noget sker, ikke *hvem* der ejer reglerne. Næste skridt er derfor at afgrænse bounded contexts: områder med eget ansvar og eget sprog (Evans, 2003). Vi har grupperet hændelserne efter, hvem der bestemmer over dem, og hvilke ord de bruger. Figur 1 viser øverst Event Storming i forenklet form med en farveforklaring og nederst de fire contexts, vi kom frem til.
-
-![](img/diagram-simpel-7-context-map.png){width=100%}
-
-::: {custom-style="Billedtekst"}
-(Figur 1, egen fremstilling (2026): Fra procesfaser til bounded contexts og context map. Farverne øverst følger Brandolinis standard: orange = domain event, blå = command, lilla = policy, gul = aktør, rød = hotspot)
-:::
+I delopgave 1 brugte vi Event Storming, en workshopmetode hvor alle hændelser i en proces sættes op på en tidslinje (Brandolini, 2013). Den gav fire procesfaser: Device, Håndtering, Service case og Execution (Delopgave 1, 2026). En fase siger dog kun, *hvornår* noget sker, ikke *hvem* der ejer reglerne. Næste skridt er derfor at afgrænse bounded contexts: områder med eget ansvar og eget sprog (Evans, 2003). Vi har grupperet hændelserne efter, hvem der bestemmer over dem, og hvilke ord de bruger. Figur 1 i bilag E viser øverst Event Storming i forenklet form med en farveforklaring og nederst de fire contexts, vi kom frem til.
 
 Sproget er det, der skiller dem ad. I *Overvågning & Alarm* er en alarm en tilstand med tre tidspunkter: åbnet, kvitteret og normal igen. I koden hedder de `opened_at`, `acknowledged_at` og `closed_at`, og medarbejderen i kontrolcentret kaldes operatøren. I *Servicesag* er samme alarm kun anledningen til en sag med prioritet og frist (SLA, Service Level Agreement). Derfor hører de til hver sin context. *Enhed & Måling* og *Overvågning & Alarm* er core, fordi det er her, IIS skiller sig ud. *Servicesag* og *Feltservice* er supporting, og *Kunde & Aftale* er generic, fordi standardsystemerne Salesforce og Business Central allerede dækker den. Det samme gælder *Sikkerhed & Identitet*, som alle contexts bruger.
 
@@ -97,13 +54,7 @@ Context mappet (figur 1, nederst) viser relationerne efter Vernon (2013). *Enhed
 
 ### 2.3. Arkitekturmønstre og teknisk arkitektur
 
-Delopgave 1 pegede på en event-drevet, modulær og API-first arkitektur i en cloud-first strategi. Figur 2 viser, hvilke komponenter der realiserer de fire contexts, og hvilke mønstre vi har valgt. Fuld ramme er bygget, og stiplet er målbilledet.
-
-![](img/diagram-simpel-8-teknisk-arkitektur.png){width=100%}
-
-::: {custom-style="Billedtekst"}
-(Figur 2, egen fremstilling (2026): Teknisk arkitektur med sensorer, netværk, REST API, database, CI/CD, event-bus og eksterne systemer. Farven på hver komponent viser dens bounded context, og numrene er arkitekturmønstrene)
-:::
+Delopgave 1 pegede på en event-drevet, modulær og API-first arkitektur i en cloud-first strategi. Figur 2 i bilag E viser, hvilke komponenter der realiserer de fire contexts, og hvilke mønstre vi har valgt. Fuld ramme er bygget, og stiplet er målbilledet.
 
 De vigtigste mønstre er: **(1) REST og API-first**, så Pi'en, kontrolcentret og Postman bruger samme indgang (Fielding, 2000). **(2) En lagdelt microservice** for context'en *Overvågning & Alarm* med reglerne isoleret i et domænelag (Richards og Ford, 2020). I MVP'en er lagene tre filer: `main.py` (API), `rules.py` (domæne) og `db.py` (data). **(3) Database pr. service**, så kun servicen skriver i sin egen PostgreSQL, som ikke kan nås fra netværket (Newman, 2021). **(4) Edge gateway**: Pi'en måler og viser, men beslutter intet, så reglerne kan ændres uden at røre enhederne. I målbilledet kommer **(5) event-drevet publish/subscribe** via en event-bus, så en alarm kan blive til en servicesag og en arbejdsordre i Mobile Service App uden direkte kobling, og **(6) et Anti-Corruption Layer** mod Business Central. Netværket er i dag Wi-Fi med HTTP. I målbilledet bliver det HTTPS med en nøgle pr. enhed, og den samme container flyttes til Azure. **(7) CI/CD-pipelinen** sikrer, at hver ændring testes, før den tages i brug.
 
@@ -114,19 +65,7 @@ De vigtigste mønstre er: **(1) REST og API-first**, så Pi'en, kontrolcentret o
 3. **Handling:** Er målingen rød, og er der ikke allerede en alarm, oprettes en alarm (*Anomaly Detected*). Svaret fortæller Pi'en, at lysdisplayet skal lyse rødt.
 4. **Afslutning:** En medarbejder kvitterer ("jeg har set den"). Alarmen lukker af sig selv, når fugten er under 55 %RH igen. At den først lukker under 55, kaldes hysterese, og det forhindrer, at alarmen blinker ved grænsen.
 
-Diagram 6 i bilag B viser reglerne og en alarms liv i fuld størrelse. Event Storming-kæden "Fejl rapporteret" → "Generer alert" → "ALERT genereret" fra delopgave 1 er netop det, løsningen udfører. "ALERT genereret" er det samme som opgavens *Anomaly Detected*: en ny række i tabellen `alarm` og i målbilledet beskeden `AlarmCreated` på event-bussen. Tabel 4 samler den røde tråd i én tabel: fra strategi over capability og context til regel og test. Hver regel har præcis én test, som også prøver værdien lige ved siden af grænsen, fx 54,9 og 55.
-
-| Fra delopgave 1 (strategi) | Capability → context | Regel i koden | Test |
-|------|-----|------|---|
-| Evnen til at følge hver enheds tilstand | Device Status Monitoring → Enhed & Måling | `status()`: grøn under 55, gul 55–60, rød over 60 | 1. farverne |
-| Event Storming: "Fejl rapporteret" → "Generer alert" | Anomaly Detection → Overvågning & Alarm | `should_open_alarm()`: en rød måling opretter en alarm | 2. alarm over 60 |
-| Medarbejderne må ikke drukne i alarmer | Alert Management → Overvågning & Alarm | Ingen ny alarm, mens enheden allerede har en | 3. ingen dobbelte alarmer |
-| Medarbejderen tager ansvar for alarmen | Alert Management → Overvågning & Alarm | Kvittering: `POST /alarms/{id}/ack` | 4. kvittering |
-| Alarmen må ikke blinke ved grænsen | Alert Management → Overvågning & Alarm | `should_close_alarm()`: lukker først under 55 (hysterese) | 5. normalisering |
-
-::: {custom-style="Billedtekst"}
-(Tabel 4, egen fremstilling (2026): Den røde tråd fra strategi over capability og context til regel og test)
-:::
+Diagram 6 i bilag B viser reglerne og en alarms liv i fuld størrelse. Event Storming-kæden "Fejl rapporteret" → "Generer alert" → "ALERT genereret" fra delopgave 1 er netop det, løsningen udfører. "ALERT genereret" er det samme som opgavens *Anomaly Detected*: en ny række i tabellen `alarm` og i målbilledet beskeden `AlarmCreated` på event-bussen. Tabel 4 i bilag E samler den røde tråd i én tabel: fra strategi over capability og context til regel og test. Hver regel har præcis én test, som også prøver værdien lige ved siden af grænsen, fx 54,9 og 55.
 
 ## 3. Implementering
 
@@ -136,18 +75,7 @@ Løsningen er skrevet i Python med FastAPI, et værktøj til hurtigt at bygge et
 
 **Reglerne** er hjertet i løsningen (bilag A, kodeuddrag 1). De ligger i deres egen fil og kender hverken databasen, netværket eller Pi'en. **Hvorfor:** Så kan de testes på en brøkdel af et sekund, og hvis IIS vil ændre grænserne, skal det kun ske ét sted. Betingelsen `and not alarm_already_open` sørger for, at ti røde målinger i træk kun giver én alarm.
 
-**API'et** har fire endpoints (tabel 5). Programmer bruger dem ved at sende forespørgsler over HTTP (Hypertext Transfer Protocol, det samme "sprog", en browser bruger). Endpointet, der modtager målinger, har de tre trin hændelse, beslutning og handling som tre kommentarer i koden (bilag A, kodeuddrag 4). **Hvorfor:** Det spørger reglerne i stedet for selv at sammenligne tal, så forretningsreglerne kun ligger ét sted. API'et er dokumenteret i Swagger på adressen `/docs`, hvor man også kan prøve det af, og i projektets README-fil på GitHub (projektets "læs mig først"-side).
-
-| Hvad man gør | Adresse | Hvem bruger det |
-|-------|-----|-----|
-| Sende en ny måling, som serveren vurderer med det samme | POST `/measurements` | Pi'en og Postman |
-| Se de seneste målinger | GET `/measurements` | Kontrolcentret |
-| Se de seneste alarmer | GET `/alarms` | Kontrolcentret og Postman |
-| Kvittere for en alarm | POST `/alarms/{id}/ack` | Kontrolcentret og Postman |
-
-::: {custom-style="Billedtekst"}
-(Tabel 5, egen fremstilling (2026): API'ets fire endpoints)
-:::
+**API'et** har fire endpoints (tabel 5 i bilag E). Programmer bruger dem ved at sende forespørgsler over HTTP (Hypertext Transfer Protocol, det samme "sprog", en browser bruger). Endpointet, der modtager målinger, har de tre trin hændelse, beslutning og handling som tre kommentarer i koden (bilag A, kodeuddrag 4). **Hvorfor:** Det spørger reglerne i stedet for selv at sammenligne tal, så forretningsreglerne kun ligger ét sted. API'et er dokumenteret i Swagger på adressen `/docs`, hvor man også kan prøve det af, og i projektets README-fil på GitHub (projektets "læs mig først"-side).
 
 ### 3.2. Data, Pi'en og kontrolcentret
 
@@ -161,35 +89,51 @@ Deployment betyder at få løsningen i gang på den computer, hvor den skal kør
 
 Koden ligger på GitHub. Hver gang vi sender ny kode til hovedgrenen (main), kører GitHub Actions, GitHubs tjeneste til automatiske kørsler, fem trin af sig selv: 1) pakkerne tjekkes for kendte sikkerhedshuller (pip-audit), 2) de 5 automatiske tests køres (pytest), 3) containeren bygges, og server, PostgreSQL og Grafana startes på GitHubs computer, 4) Postman-testene køres mod den kørende løsning (Newman), og 5) Grafana tjekkes. Fejler ét trin, stopper kørslen, og fejlen kan ses på GitHub (kodeuddrag 11 og bilag B, diagram 5).
 
-Kørslerne har været grønne siden den første automatiske kørsel den 6. november 2026 (bilag B, skærmbillede 2). Kørsel 12 på den endelige kode var grøn i alle trin og tog 50 sekunder (https://github.com/Vildmand/Delopgave2/actions/runs/43131875396). CI-delen er fuldt automatisk. CD-delen er continuous delivery i lille skala: på GitHubs computer bygges containeren, og hele løsningen startes og testes, så den er klar til brug. Selve udrulningen på den bærbare computer, som Pi'en sender til, sker med kommandoen ovenfor.
+Kørslerne har været grønne siden den første automatiske kørsel den 6. november 2026 (bilag B, skærmbillede 2). Kørsel 14 på den endelige kode var grøn i alle trin og tog 47 sekunder (https://github.com/Vildmand/Delopgave2/actions/runs/44205979778). CI-delen er fuldt automatisk. CD-delen er continuous delivery i lille skala: på GitHubs computer bygges containeren, og hele løsningen startes og testes, så den er klar til brug. Selve udrulningen på den bærbare computer, som Pi'en sender til, sker med kommandoen ovenfor.
 
 Sikkerheden er enkel, men med fra starten, som vi anbefalede i delopgave 1. Containeren kører ikke som administrator (root), databasen kan kun nås af serveren inde i Dockers eget netværk, den automatiske kontrol må kun læse koden, og pakkerne scannes ved hver ændring.
 
 ## 5. Kvalitet og drift
 
-**Test.** De 5 automatiske tests svarer til de 5 regler i tabel 4 og kører på under et sekund med en tom database i hukommelsen. De prøver begge sider af hver grænse, så en forkert ændring af en regel får en test til at fejle. Postman-samlingen gennemspiller hele alarmforløbet i 5 trin. Alle bestod både lokalt og på GitHub, og vi så rækkerne i PostgreSQL med psql (databasens eget spørgeprogram). Programmet er også afprøvet på den rigtige Pi over Wi-Fi: i et tørt lokale på cirka 28 %RH lyste displayet grønt, og når man puster på sensoren, bliver det rødt, og alarmen dukker op i kontrolcentret.
+I dette afsnit gennemgår vi først, hvordan reglerne fra tabel 4 bliver testet, både lokalt og i pipelinen. Derefter beskriver vi, hvordan løsningen håndterer fejl, og hvordan vi overvåger den i drift med kontrolcentret og Grafana. Afsnittet viser dermed, hvordan mål 1–5 i tabel 3 er eftervist, og hvordan mål 6 kan måles i en pilot.
 
-**Overvågning, fejlhåndtering og logning.** Medarbejderen kvitterer i kontrolcentret, mens driften følges i Grafana (bilag B, skærmbillede 3), som med SQL læser direkte fra de to tabeller: fugt over tid, åbne alarmer, sekunder siden seneste måling (så en død sensor opdages) og MTTA, tiden fra alarm til kvittering, som er mål 6 (Atlassian, 2023, s. 56–57). Uden forbindelse lyser Pi'en blåt og prøver igen efter 5 sekunder. Serveren logger hver forespørgsel med svarkode (`docker compose logs api`), og fejler CI, vises loggen.
+### 5.1. Test i pipelinen
+
+Goniwada (2021, s. 531–532) beskriver CI som det sted, hvor unit tests og build automatiseres ved hver ændring, mens CD tester ud over unit tests, fx med API- og integrationstest, før koden når et miljø. Vores pipeline følger den opdeling, og testene er fordelt efter testpyramiden: mange små og hurtige test nederst og få brede test øverst, fordi testene bliver langsommere og dyrere at vedligeholde, jo højere de ligger (Vocke, 2018). Nederst ligger enhedstest af reglerne. Fordi `rules.py` ikke kender databasen eller netværket, kan test 1 kalde `status()` direkte og tjekke begge sider af hver grænse: 54,9 er grøn, 55 og 60 er gule, og 60,1 er rød. I midten ligger integrationstest. Test 2–5 kalder API'et, præcis som Pi'en gør, med en ny, tom database i hukommelsen for hver test, så testene ikke påvirker hinanden og kører uden Docker på under et sekund. For at kontrollere, at testene faktisk fanger fejl, har vi med vilje lavet små fejl i reglerne og set testene blive røde. Når fx `<` blev ændret til `<=`, eller grænsen 55 blev ændret til 50,5, fejlede mindst én test hver gang. Øverst ligger ende-til-ende-testen: pipelinen starter API'et, PostgreSQL og Grafana med `docker compose`, og Newman, Postmans kommandolinjeværktøj, kører de fem kald gennem hele alarmforløbet mod den kørende løsning. Til sidst er løsningen afprøvet på den rigtige Pi over Wi-Fi, hvor et pust på Sense HAT'en gav rødt lys og en alarm i kontrolcentret.
+
+### 5.2. Fejlhåndtering
+
+Fejl stoppes i det led, hvor de opstår. Ved indgangen afviser Pydantic, det bibliotek FastAPI bruger til at kontrollere data, fugt uden for 0–100 %RH med statuskoden 422, før reglerne kører, så intet ugyldigt bliver gemt eller giver en falsk alarm. En alarm, der ikke findes, giver 404, og en alarm, der allerede er kvitteret eller lukket, giver 409. I databasen gemmes målingen og en eventuel alarm samlet i én transaktion, så der aldrig opstår en alarm uden den måling, der udløste den (mål 3). Svarer serveren ikke, lyser Pi'en blåt og prøver igen fem sekunder senere i stedet for at gå i stå. Ved opstart venter API'et på, at databasen svarer, så tabellerne ikke forsøges oprettet, før den er klar.
+
+### 5.3. Overvågning og incident management
+
+Goniwada (2021, s. 409) skelner mellem monitoring, hvor man på forhånd ved, hvad der skal holdes øje med, og observability, hvor systemets tilstand kan udledes af de data, det sender ud. Han påpeger også, at et lille system kan overvåges godt med få sundhedsparametre. Vi har derfor delt overvågningen i to. Kontrolcentret er til medarbejderen, som skal se og kvittere for den enkelte alarm, og viser en ny alarm senest cirka otte sekunder efter, at fugten er steget (mål 1). Grafana er til driften (skærmbillede 3 i bilag B). Det læser direkte fra databasetabellerne med SQL, så der er ingen ny Python-kode, og dashboardet ligger som en fil i repoet, så det er ens hver gang. Det viser fugten over tid med grænserne 55 og 60, antallet af åbne alarmer og sekunder siden seneste måling, som bliver rød efter 15 sekunder, så en sensor, der er holdt op med at sende, bliver opdaget.
+
+Hver alarm fungerer som en lille incident. Ifølge Atlassian (2023, s. 22) er første skridt i incident response, at overvågningen selv opdager problemet og registrerer det, helst før kunden mærker noget. Det er netop det, `should_open_alarm()` gør. Alarmens tre tidsstempler giver direkte de nøgletal, håndbogen anbefaler (Atlassian, 2023, s. 56–57). Tiden fra `opened_at` til `acknowledged_at` er MTTA (mean time to acknowledge), altså hvor hurtigt en medarbejder tager ansvar, og tiden fra `opened_at` til `closed_at` svarer til tiden til løsning (MTTR). Mål 6 i tabel 3 er derfor MTTA, og det kan nu aflæses direkte i Grafana. Skærmbillede 3 i bilag B viser, at medianen fra alarm til kvittering var 4 sekunder i vores test, hvilket er langt under målet på 15 minutter. Tallet kommer dog fra en test, hvor vi selv kvitterede med det samme, så mål 6 skal stadig eftervises i en pilot med rigtige medarbejdere. Alvorlighedsgrader, eskalering og post-incident reviews er ikke en del af MVP'en. De hører til context'en *Servicesag* i afsnit 2.2, som i målbilledet modtager alarmen via event-bussen.
+
+### 5.4. Logning og telemetri
+
+Goniwada (2021, s. 411–412) deler telemetri op i metrics, events, logs, traces og audit. MVP'en dækker events, logs og en enkel form for metrics. Databasetabellerne `measurement` og `alarm` er en varig historik over hændelserne *Sensor Value Received* og *Anomaly Detected* med tidspunkter, og Grafana regner nøgletallene ud fra dem. Serveren skriver hver forespørgsel med adresse og statuskode i containerens log, som læses med `docker compose logs api`, og fejler et trin i pipelinen, udskriver den selv loggen, så fejlen kan findes uden at genskabe den lokalt. Loggen er dog almindelig tekst, mens Goniwada (2021, s. 417) anbefaler strukturerede logs, fordi de er lettere at søge i, og der er ingen traces. Næste skridt er derfor at logge hændelser som "alarm åbnet" struktureret og lade Grafana selv sende besked, fx en SMS, når en alarm ikke er kvitteret i tide.
 
 ## 6. Refleksion
 
-### 6.1. Hvad fungerede godt
+### 6.1. Hvor vi står nu
 
-Det fungerede bedst at lade delopgave 1 styre koden. Hver regel kan føres tilbage til strategien og har én test (tabel 4), og mål 1–5 i tabel 3 er opfyldt. Da "Generer alert" fra Event Storming blev til "alarm oprettet" i koden, databasen og testene, blev løsningen let at forklare. Det fungerede også godt at skære ned. Vi byggede først en stor udgave med tre måletyper, en logbog over hændelser og 153 tests. Med fem filer kan man følge hele kæden, og alle opgavens krav er stadig opfyldt. Feedbacken på delopgave 1 fik os også til at tage skridtet fra procesfaser til bounded contexts (afsnit 2.1). Det gjorde det lettere at begrunde, hvad MVP'en *ikke* skal indeholde: servicesager og feltservice hører til andre contexts.
+MVP'en dækker de to første trin i VS7: anlægget overvåges i realtid, og medarbejderen bliver varslet om afvigelser i tide. Hver regel kan føres tilbage til strategien fra delopgave 1 og har én test (tabel 4), og mål 1–5 i tabel 3 er opfyldt. Da "Generer alert" fra Event Storming blev til "alarm oprettet" i koden, databasen og testene, blev løsningen let at forklare. Med fem filer kan man følge hele kæden fra måling til kvittering, og alle opgavens krav er opfyldt. Feedbacken på delopgave 1 fik os til at tage skridtet fra procesfaser til bounded contexts (afsnit 2.1). Det gjorde det lettere at begrunde, hvad MVP'en ikke skal indeholde: servicesager og feltservice hører til andre contexts.
 
-### 6.2. Hvad kunne forbedres
+### 6.2. Begrænsninger i den nuværende løsning
 
-Vi burde have startet småt og bygget ud i stedet for omvendt. Én høj måling giver straks en alarm, så et kort pust kan give en falsk alarm. Der er intet login, så alle på netværket kan sende målinger og kvittere, og forbindelsen er ikke krypteret. Kontrolcentret skelner ikke mellem flere enheder, selvom API'et gør, og uden låsning kan to samtidige målinger i teorien give to alarmer. Og løsningen er ikke rigtig forudsigende vedligeholdelse: en fast grænse opdager et problem nu, men forudsiger ikke et senere. Det er mere præcist at kalde den afvigelsesdetektion, som gør vedligeholdelsen proaktiv. Mål 6–8 i tabel 3 kræver en pilot hos en kunde.
+MVP'en er bevidst holdt lille, og det har en pris. Én høj måling giver straks en alarm, så et kort pust kan give en falsk alarm. Der er intet login, så alle på netværket kan sende målinger og kvittere, og forbindelsen er ikke krypteret. Kontrolcentret skelner ikke mellem flere enheder, selvom API'et gør, og uden låsning kan to samtidige målinger i teorien give to alarmer. Løsningen er heller ikke rigtig forudsigende vedligeholdelse. En fast grænse opdager et problem nu, men forudsiger ikke et senere, så det er mere præcist at kalde den afvigelsesdetektion. Mål 6–8 i tabel 3 kan først måles i en pilot hos en kunde.
 
-### 6.3. Hvordan løsningen kan videreudvikles
+### 6.3. Hvis vi havde haft mere tid
 
-Den store udgave ligger urørt i vores første repository (https://github.com/miemosberg2201/RaspPI), så hvert næste skridt er allerede bygget og testet én gang (bilag B, diagram 4). Trinene følger context mappet i figur 1 og tages ét ad gangen, når forretningen har brug for dem, for teknologi skal vælges, fordi den løser et behov (Delopgave 1, 2026):
+Med mere tid ville vi bygge MVP'en ud til den fulde model, som vi har afprøvet i en tidlig prototype i vores første repository (https://github.com/miemosberg2201/RaspPI). Prototypen viser, at hvert skridt kan lade sig gøre, så udbygningen bliver mindre risikabel (bilag B, diagram 4). Trinene følger context mappet i figur 1 og tages ét ad gangen, når forretningen har brug for dem, for teknologi skal vælges, fordi den løser et behov (Delopgave 1, 2026).
 
-1. **En mere robust regel:** alarm først efter tre høje målinger i træk, så et kort pust ikke giver alarm.
-2. **En logbog over hændelser og en event-bus:** så context'en *Servicesag* kan abonnere på alarmer og oprette sager i Business Central gennem et Anti-Corruption Layer (figur 2).
-3. **Flere måletyper, kode i lag og en kø på Pi'en**, så mockup-kortene bliver rigtige, og intet tabes.
-4. **Sikkerhed og cloud:** nøgle pr. enhed, login, HTTPS og Azure, så mål 6 og 7 kan måles i en pilot.
+Det første, vi ville gøre, er at gøre reglen mere robust, så alarmen først går, når der er tre høje målinger i træk. Så giver et kort pust på sensoren ikke længere en falsk alarm. Derefter ville vi tilføje en logbog over hændelser og en event-bus, så context'en *Servicesag* kan abonnere på alarmerne og oprette sager i Business Central gennem et Anti-Corruption Layer (figur 2). Det er her, MVP'en går fra at vise en alarm til at sætte gang i selve serviceforløbet.
 
+Når det fundament er på plads, ville vi tilføje lufttryk og rystelser som rigtige målinger, så mockup-kortene i kontrolcentret bliver til virkelige data. Med flere måletyper bliver koden større, og derfor ville vi samtidig dele den op i lag for API, domæne og data. Vi ville også give Pi'en en kø, så ingen målinger går tabt, hvis netværket falder ud. Driften skal også være mere robust. Prototypen har 153 tests mod MVP'ens 5, og den bruger databasemigrationer og låsning, så to samtidige målinger aldrig kan give to alarmer.
+
+Til sidst ville vi gøre løsningen klar til en rigtig kunde med en nøgle pr. enhed, login, HTTPS og drift i Azure. Først da kan mål 6 og 7 i tabel 3 måles i en pilot.
 
 ## Litteraturliste {.unnumbered}
 
@@ -211,6 +155,8 @@ Erhvervsakademi København (2026). *Afleveringsopgave #2 – Teknisk MVP – RES
 
 Fielding, R.T. (2000). *Architectural Styles and the Design of Network-based Software Architectures*. Doktorafhandling. University of California, Irvine.
 
+Goniwada, S.R. (2021). *Cloud Native Architecture and Design: A Handbook for Modern Day Architecture and Design with Enterprise-Grade Examples*. Berkeley, CA: Apress.
+
 Newman, S. (2021). *Building Microservices*. 2. udg. Sebastopol: O'Reilly.
 
 Osterwalder, A. og Pigneur, Y. (2010). *Business Model Generation*. Hoboken: Wiley.
@@ -222,6 +168,8 @@ Richards, M. og Ford, N. (2020). *Fundamentals of Software Architecture*. Sebast
 Ries, E. (2011). *The Lean Startup*. New York: Crown Business.
 
 Vernon, V. (2013). *Implementing Domain-Driven Design*. Upper Saddle River: Addison-Wesley.
+
+Vocke, H. (2018). *The Practical Test Pyramid*. martinfowler.com. Tilgængelig på: https://martinfowler.com/articles/practical-test-pyramid.html.
 
 ## Bilag A. Udvalgte kodeuddrag {.unnumbered .bilag}
 
@@ -326,7 +274,7 @@ Billederne er taget af den rigtige kode med de rigtige linjenumre. Koden er skre
 ![](img/ci-groen-koersel-3.png){width=70%}
 
 ::: {custom-style="Billedtekst"}
-(Skærmbillede 2: Den grønne kørsel nummer 3 på GitHub Actions. Trinene og tiderne er gengivet fra kørslens egne data på GitHub. Kørsel 12 på den endelige kode: https://github.com/Vildmand/Delopgave2/actions/runs/43131875396)
+(Skærmbillede 2: Den grønne kørsel nummer 3 på GitHub Actions. Trinene og tiderne er gengivet fra kørslens egne data på GitHub. Kørsel 14 på den endelige kode: https://github.com/Vildmand/Delopgave2/actions/runs/44205979778)
 :::
 
 ![](img/grafana.png){width=85%}
@@ -379,7 +327,7 @@ Mappestrukturen (på engelsk et treeview) viser alle filer i https://github.com/
 Delopgave2/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                CI/CD: pip-audit → pytest → Docker → Newman → Grafana
+│       └── ci.yml                CI/CD: audit → test → Docker → Newman
 ├── docs/
 │   ├── img/                      kodebilleder (01–11) og diagrammer (1–8)
 │   ├── KODEGUIDE.md              forklaring af koden, fil for fil
@@ -389,7 +337,7 @@ Delopgave2/
 │   ├── START-HER.md              overblik på én side til nye i gruppen
 │   ├── VIDEOMANUSKRIPT.md        manuskript til videoen (ca. 5 min.)
 │   └── praesentation.pdf/.pptx   gruppens præsentation
-├── grafana/                      overvågning som kode: datakilde + dashboard (SQL mod PostgreSQL)
+├── grafana/                      Grafana-dashboard som kode
 ├── pi/
 │   └── pi.py                     kører på Pi'en: måler, sender, farver LED
 ├── postman/
@@ -431,4 +379,80 @@ De vigtigste fagord. Andre forkortelser er forklaret i en parentes, første gang
 
 ::: {custom-style="Billedtekst"}
 (Bilag D, egen fremstilling (2026): Begreber og forkortelser)
+:::
+
+## Bilag E. Tabeller og figurer fra rapporten {.unnumbered .bilag}
+
+Tabellerne og figurerne står i samme rækkefølge, som de nævnes i rapporten.
+
+| Kundeprofil (B2B-kunde med Managed Services-aftale) | Værdiforslag: sådan svarer MVP'en |
+|---|---|
+| **Opgave:** holde anlægget, fx en vindmølle, kørende og producerende | Måler tilstanden løbende og viser den i kontrolcentret |
+| **Smerte:** uplanlagte stop, fordi fugt giver rust og kortslutning, som opdages for sent | Alarm ved første kritiske måling, før skaden sker |
+| **Smerte:** alarmtræthed, når samme fejl giver mange alarmer | Højst én åben alarm ad gangen og hysterese ved grænsen |
+| **Gevinst:** højere oppetid og dokumentation for den | Alle målinger og alarmer gemmes med tidspunkter |
+
+::: {custom-style="Billedtekst"}
+(Tabel 1, egen fremstilling (2026): Value Proposition Canvas for Managed Services-kunden, koblet til MVP'en)
+:::
+
+| Capability (L1) | Bruges i | Det bygger MVP'en (L2/L3) |
+|---|---|---|
+| Measurement Management | VS2, VS3, VS4, VS7 | Measurement Collection, Anomaly Detection, Dashboard Provisioning |
+| Device Management | VS1, VS2, VS3, VS5, VS6, VS7 | Device Status Monitoring (farven på Pi'en og seneste måling) |
+| Asset Management | VS3, VS4, VS7 | Alert Management (alarm, kvittering, normal igen) |
+| Service Management | VS1, VS2, VS6, VS7 | Ikke bygget, næste skridt (servicesag, afsnit 6.3) |
+
+::: {custom-style="Billedtekst"}
+(Tabel 2, egen fremstilling (2026) ud fra optællingen i delopgave 1: De fire centrale capabilities og de value streams, de indgår i)
+:::
+
+| Mål | Sådan måles det | Status |
+|---|---|---|
+| 1. En kritisk måling giver alarm med det samme | Alarmen oprettes i samme kald som målingen. Den ses i kontrolcentret efter højst ca. 8 sek. (måling hvert 5. og opdatering hvert 3. sek.) | Opfyldt: test 2. De 8 sek. følger af de to intervaller |
+| 2. Ingen alarmstøj | Ekstra alarmer ved gentagne røde målinger fra samme enhed: 0 | Opfyldt (test 3) |
+| 3. Ingen halve data | Måling og alarm gemmes samlet i én transaktion (ét `commit`) | Opfyldt: test 2 og kodeuddrag 4 |
+| 4. Ansvar kan ses | Hvert skridt i alarmens liv får sit eget tidspunkt: åbnet, kvitteret og normal igen | Opfyldt (test 4 og 5) |
+| 5. Hurtig og sikker levering | Automatisk kontrol pr. ændring: under 2 min. | Opfyldt: 47 sek. (kørsel 14) |
+| 6. Kort reaktionstid | Median fra alarm til kvittering (`opened_at` → `acknowledged_at`): under 15 min. | Pilot |
+| 7. Færre uplanlagte stop | Stop pga. fugt over 12 måneder mod året før: 30 % færre | Pilot |
+| 8. Vækst i Managed Services | Mindst 10 % af omsætningen inden for fem år (Casebeskrivelse, 2026) | Strategisk mål |
+
+::: {custom-style="Billedtekst"}
+(Tabel 3, egen fremstilling (2026): Målbare mål for løsningen. Grænserne i mål 6 og 7 er vores foreslåede mål)
+:::
+
+| Fra delopgave 1 (strategi) | Capability → context | Regel i koden | Test |
+|------|-----|------|---|
+| Evnen til at følge hver enheds tilstand | Device Status Monitoring → Enhed & Måling | `status()`: grøn under 55, gul 55–60, rød over 60 | 1. farverne |
+| Event Storming: "Fejl rapporteret" → "Generer alert" | Anomaly Detection → Overvågning & Alarm | `should_open_alarm()`: en rød måling opretter en alarm | 2. alarm over 60 |
+| Medarbejderne må ikke drukne i alarmer | Alert Management → Overvågning & Alarm | Ingen ny alarm, mens enheden allerede har en | 3. ingen dobbelte alarmer |
+| Medarbejderen tager ansvar for alarmen | Alert Management → Overvågning & Alarm | Kvittering: `POST /alarms/{id}/ack` | 4. kvittering |
+| Alarmen må ikke blinke ved grænsen | Alert Management → Overvågning & Alarm | `should_close_alarm()`: lukker først under 55 (hysterese) | 5. normalisering |
+
+::: {custom-style="Billedtekst"}
+(Tabel 4, egen fremstilling (2026): Den røde tråd fra strategi over capability og context til regel og test)
+:::
+
+| Hvad man gør | Adresse | Hvem bruger det |
+|-------|-----|-----|
+| Sende en ny måling, som serveren vurderer med det samme | POST `/measurements` | Pi'en og Postman |
+| Se de seneste målinger | GET `/measurements` | Kontrolcentret |
+| Se de seneste alarmer | GET `/alarms` | Kontrolcentret og Postman |
+| Kvittere for en alarm | POST `/alarms/{id}/ack` | Kontrolcentret og Postman |
+
+::: {custom-style="Billedtekst"}
+(Tabel 5, egen fremstilling (2026): API'ets fire endpoints)
+:::
+
+![](img/diagram-simpel-7-context-map.png){width=100%}
+
+::: {custom-style="Billedtekst"}
+(Figur 1, egen fremstilling (2026): Fra procesfaser til bounded contexts og context map. Farverne øverst følger Brandolinis standard: orange = domain event, blå = command, lilla = policy, gul = aktør, rød = hotspot)
+:::
+
+![](img/diagram-simpel-8-teknisk-arkitektur.png){width=100%}
+
+::: {custom-style="Billedtekst"}
+(Figur 2, egen fremstilling (2026): Teknisk arkitektur med sensorer, netværk, REST API, database, CI/CD, event-bus og eksterne systemer. Farven på hver komponent viser dens bounded context, og numrene er arkitekturmønstrene)
 :::
