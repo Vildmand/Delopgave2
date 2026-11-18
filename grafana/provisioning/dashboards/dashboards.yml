@@ -1,0 +1,11 @@
+# Fortæller Grafana, at dashboards ligger som JSON-filer i /var/lib/grafana/dashboards.
+# Dashboardet er altså kode i repoet ("dashboard as code") og ikke noget, man klikker sammen.
+apiVersion: 1
+providers:
+  - name: fugt
+    folder: ""
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards

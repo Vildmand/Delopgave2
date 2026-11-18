@@ -1,0 +1,18 @@
+# Grafanas datakilde: den samme PostgreSQL, som API'et skriver i.
+# Grafana læser kun (SELECT) og skriver aldrig i tabellerne. Filen indlæses automatisk,
+# når containeren starter ("provisioning"), så ingen skal klikke datakilden op i hånden.
+apiVersion: 1
+datasources:
+  - name: Fugt-DB
+    uid: fugt-db                       # fast id, så dashboardet altid finder datakilden
+    type: grafana-postgresql-datasource
+    url: db:5432                        # "db" = databasecontaineren i docker-compose.yml
+    user: fugt
+    secureJsonData:
+      password: fugt                    # kun til lokal demo, ligesom i docker-compose.yml
+    jsonData:
+      database: fugt
+      sslmode: disable                  # trafikken bliver inde i Dockers eget netværk
+      postgresVersion: 1600
+    isDefault: true
+    editable: false
