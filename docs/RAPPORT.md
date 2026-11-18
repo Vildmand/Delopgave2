@@ -157,9 +157,9 @@ Programmet på Pi'en tager udgangspunkt i undervisningens eksempel (Eftekhari, 2
 
 ## 4. DevSecOps og deployment
 
-Deployment betyder at få løsningen i gang på den computer, hvor den skal køre. Vores løsning kører lokalt i Docker og startes med én kommando: `docker compose up --build`. Den bygger koden og starter to containere: `db` med PostgreSQL og `api` med serveren, som venter, til databasen er klar. Data ligger i et Docker-volume (et lager uden for containeren), så de overlever en genstart (kodeuddrag 9 og 10).
+Deployment betyder at få løsningen i gang på den computer, hvor den skal køre. Vores løsning kører lokalt i Docker og startes med én kommando: `docker compose up --build`. Den bygger koden og starter tre containere: `db` med PostgreSQL, `api` med serveren, som venter, til databasen er klar, og `grafana`. Data ligger i et Docker-volume (et lager uden for containeren), så de overlever en genstart (kodeuddrag 9 og 10).
 
-Koden ligger på GitHub. Hver gang vi sender ny kode til hovedgrenen (main), kører GitHub Actions, GitHubs tjeneste til automatiske kørsler, fire trin af sig selv: 1) pakkerne tjekkes for kendte sikkerhedshuller (pip-audit), 2) de 5 automatiske tests køres (pytest), 3) containeren bygges, og server og PostgreSQL startes på GitHubs computer, og 4) Postman-testene køres mod den kørende løsning (Newman). Fejler ét trin, stopper kørslen, og fejlen kan ses på GitHub (kodeuddrag 11 og bilag B, diagram 5).
+Koden ligger på GitHub. Hver gang vi sender ny kode til hovedgrenen (main), kører GitHub Actions, GitHubs tjeneste til automatiske kørsler, fem trin af sig selv: 1) pakkerne tjekkes for kendte sikkerhedshuller (pip-audit), 2) de 5 automatiske tests køres (pytest), 3) containeren bygges, og server, PostgreSQL og Grafana startes på GitHubs computer, 4) Postman-testene køres mod den kørende løsning (Newman), og 5) Grafana tjekkes. Fejler ét trin, stopper kørslen, og fejlen kan ses på GitHub (kodeuddrag 11 og bilag B, diagram 5).
 
 Kørslerne har været grønne siden den første automatiske kørsel den 6. november 2026 (bilag B, skærmbillede 2). Kørsel 12 på den endelige kode var grøn i alle trin og tog 50 sekunder (https://github.com/Vildmand/Delopgave2/actions/runs/43131875396). CI-delen er fuldt automatisk. CD-delen er continuous delivery i lille skala: på GitHubs computer bygges containeren, og hele løsningen startes og testes, så den er klar til brug. Selve udrulningen på den bærbare computer, som Pi'en sender til, sker med kommandoen ovenfor.
 
@@ -169,7 +169,7 @@ Sikkerheden er enkel, men med fra starten, som vi anbefalede i delopgave 1. Cont
 
 **Test.** De 5 automatiske tests svarer til de 5 regler i tabel 4 og kører på under et sekund med en tom database i hukommelsen. De prøver begge sider af hver grænse, så en forkert ændring af en regel får en test til at fejle. Postman-samlingen gennemspiller hele alarmforløbet i 5 trin. Alle bestod både lokalt og på GitHub, og vi så rækkerne i PostgreSQL med psql (databasens eget spørgeprogram). Programmet er også afprøvet på den rigtige Pi over Wi-Fi: i et tørt lokale på cirka 28 %RH lyste displayet grønt, og når man puster på sensoren, bliver det rødt, og alarmen dukker op i kontrolcentret.
 
-**Overvågning, fejlhåndtering og logning.** Kontrolcentret viser tidspunktet for den seneste måling, så man kan se, hvis Pi'en er holdt op med at sende, og Pi'en lyser blåt uden forbindelse. Fejler netværket, prøver Pi'en igen 5 sekunder senere. Serveren skriver hver forespørgsel med adresse og svarkode i Docker-loggen (en slags dagbog), som man ser med `docker compose logs api`, og fejler den automatiske kontrol, viser den selv loggen.
+**Overvågning, fejlhåndtering og logning.** Medarbejderen kvitterer i kontrolcentret, mens driften følges i Grafana (bilag B, skærmbillede 3), som med SQL læser direkte fra de to tabeller: fugt over tid, åbne alarmer, sekunder siden seneste måling (så en død sensor opdages) og MTTA, tiden fra alarm til kvittering, som er mål 6 (Atlassian, 2023, s. 56–57). Uden forbindelse lyser Pi'en blåt og prøver igen efter 5 sekunder. Serveren logger hver forespørgsel med svarkode (`docker compose logs api`), og fejler CI, vises loggen.
 
 ## 6. Refleksion
 
@@ -192,6 +192,8 @@ Den store udgave ligger urørt i vores første repository (https://github.com/mi
 
 
 ## Litteraturliste {.unnumbered}
+
+Atlassian (2023). *Incident Management Handbook for Jira Service Management*. Atlassian.
 
 Brandolini, A. (2013). *Introducing EventStorming*. Leanpub.
 
@@ -292,7 +294,7 @@ Billederne er taget af den rigtige kode med de rigtige linjenumre. Koden er skre
 ![](img/09-docker-compose.png){width=92%}
 
 ::: {custom-style="Billedtekst"}
-(Kodeuddrag 9: De to containere i docker-compose.yml)
+(Kodeuddrag 9: Databasen og serveren i docker-compose.yml)
 :::
 
 **Hvorfor:** Databasen kører i sin egen container, som opgaven kræver. Serveren starter først, når databasen svarer (healthcheck), ellers ville den fejle ved opstart. Data ligger i et volume, så de overlever en genstart. Databasen har ingen åben port mod netværket.
@@ -325,6 +327,12 @@ Billederne er taget af den rigtige kode med de rigtige linjenumre. Koden er skre
 
 ::: {custom-style="Billedtekst"}
 (Skærmbillede 2: Den grønne kørsel nummer 3 på GitHub Actions. Trinene og tiderne er gengivet fra kørslens egne data på GitHub. Kørsel 12 på den endelige kode: https://github.com/Vildmand/Delopgave2/actions/runs/43131875396)
+:::
+
+![](img/grafana.png){width=85%}
+
+::: {custom-style="Billedtekst"}
+(Skærmbillede 3: Grafana-dashboardet under en test. Fugten stiger over 60, alarmen kvitteres efter 4 sekunder (MTTA) og er normal igen efter 28 sekunder. Panelerne er SQL-forespørgsler mod tabellerne measurement og alarm)
 :::
 
 ![](img/diagram-simpel-1-arkitektur.png){width=100%}
@@ -371,7 +379,7 @@ Mappestrukturen (på engelsk et treeview) viser alle filer i https://github.com/
 Delopgave2/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                CI/CD: pip-audit → pytest → Docker → Newman
+│       └── ci.yml                CI/CD: pip-audit → pytest → Docker → Newman → Grafana
 ├── docs/
 │   ├── img/                      kodebilleder (01–11) og diagrammer (1–8)
 │   ├── KODEGUIDE.md              forklaring af koden, fil for fil
@@ -381,6 +389,7 @@ Delopgave2/
 │   ├── START-HER.md              overblik på én side til nye i gruppen
 │   ├── VIDEOMANUSKRIPT.md        manuskript til videoen (ca. 5 min.)
 │   └── praesentation.pdf/.pptx   gruppens præsentation
+├── grafana/                      overvågning som kode: datakilde + dashboard (SQL mod PostgreSQL)
 ├── pi/
 │   └── pi.py                     kører på Pi'en: måler, sender, farver LED
 ├── postman/
@@ -394,7 +403,7 @@ Delopgave2/
 ├── Dockerfile                    opskriften på serverens container
 ├── README.md                     forsiden på GitHub: kom i gang og API
 ├── db.py                         databasen: measurement og alarm
-├── docker-compose.yml            starter server og PostgreSQL
+├── docker-compose.yml            starter server, PostgreSQL og Grafana
 ├── main.py                       REST API'et: de 4 endpoints
 ├── pytest.ini                    indstilling til testene
 ├── requirements-dev.txt          pakker kun til test
