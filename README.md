@@ -27,6 +27,8 @@ En medarbejder ser alarmen i kontrolcentret og kvitterer.
 
 Kommentarerne i koden er en del af dokumentationen. Start med `docs/KODEGUIDE.md`.
 
+**Trin-for-trin guide** (start, test, Pi og fejlfinding): `docs/GUIDE.md`.
+
 ## Kør løsningen (Windows, Docker Desktop)
 
 ```powershell
