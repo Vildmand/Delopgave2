@@ -5,7 +5,7 @@ Alle diagrammer er tegnet ud fra koden i dette repo (Egen fremstilling, 2026). K
 | Fil | Billedtekst |
 |---|---|
 | `diagram-simpel-1-arkitektur.png` | Arkitekturdiagram: Raspberry Pi med Sense HAT sender målinger over Wi-Fi til FastAPI; API, PostgreSQL og Grafana kører i hver sin Docker-container på laptoppen; kontrolcentret i browseren henter data og kvitterer, Grafana læser databasen; nederst CI på GitHub Actions. Rapportens bilag B, diagram 1. |
-| `diagram-simpel-9-dataflow.png` | Dataflowdiagram: måling → validering (422 ved fejl) → regel for farve → gem i `measurement` → regel for alarm (åbn/luk i `alarm`) → svar til LED'en; alarmens liv åben → kvitteret → lukket; kontrolcenter, Kvittér og Grafana som brugere af data. Rapportens bilag B, diagram 7. |
+| `diagram-simpel-9-dataflow.png` | Dataflow (enkel): Pi'en måler → serveren tjekker → reglen afgør farven → gemmes → LED'en lyser; kontrolcentret, medarbejderen der kvitterer (åben → kvitteret → lukket) og Grafana bruger data. Rapportens bilag B, diagram 7. |
 | `diagram-simpel-2-alarmflow.png` | Reglerne: farveskalaen grøn/gul/rød (55 og 60 %RH) og en alarms liv fra åben over kvitteret til lukket, med hysterese og testene 2–5 på pilene. |
 | `diagram-simpel-3-sekvens.png` | Sekvens: hvad der sker trin for trin, når Pi'en måler 63,1 %RH (validering, regler, én databasetransaktion, rød LED), og når en medarbejder kvitterer. |
 | `diagram-simpel-4-cicd.png` | CI/CD: GitHub Actions kører pip-audit, de 5 tests, bygger og starter Docker-stakken og kører Postman mod den ved hvert push til main. |

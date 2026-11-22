@@ -322,7 +322,7 @@ Billederne er taget af den rigtige kode med de rigtige linjenumre. Koden er skre
 ![](img/diagram-simpel-9-dataflow.png){width=100%}
 
 ::: {custom-style="Billedtekst"}
-(Diagram 7, egen fremstilling (2026): Dataflowdiagram. Øverst målingens vej ind: måling, validering, regel for farve, lagring, regel for alarm og svaret til LED'en. I midten de to datalagre measurement og alarm med alarmens liv (åben, kvitteret, lukket). Nederst hvem der bruger data: kontrolcentret, kvitteringen og Grafana)
+(Diagram 7, egen fremstilling (2026): Dataflow i enkel form. Øverst målingens vej: Pi'en måler, serveren tjekker, reglen afgør farven, data gemmes, og LED'en lyser. Nederst hvem der bruger data: kontrolcentret, medarbejderen, der kvitterer (alarmen går fra åben over kvitteret til lukket), og Grafana)
 :::
 
 ## Bilag C. Hele projektets mappestruktur på GitHub {.unnumbered .bilag}
