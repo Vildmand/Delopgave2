@@ -286,7 +286,7 @@ Billederne er taget af den rigtige kode med de rigtige linjenumre. Koden er skre
 ![](img/diagram-simpel-1-arkitektur.png){width=100%}
 
 ::: {custom-style="Billedtekst"}
-(Diagram 1, egen fremstilling (2026): Hvor kører hvad i MVP'en. Pi'en sender målinger over Wi-Fi til serveren og databasen i hver sin Docker-container på den bærbare computer. Kontrolcentret i browseren henter data og kvitterer. Nederst den automatiske kontrol på GitHub)
+(Diagram 1, egen fremstilling (2026): Arkitekturdiagram, hvor kører hvad i MVP'en. Pi'en sender målinger over Wi-Fi til serveren på den bærbare computer, hvor API, PostgreSQL og Grafana kører i hver sin Docker-container. Kontrolcentret i browseren henter data og kvitterer, og Grafana læser direkte fra databasen. Nederst den automatiske kontrol på GitHub)
 :::
 
 ![](img/diagram-simpel-3-sekvens.png){width=100%}
@@ -319,6 +319,12 @@ Billederne er taget af den rigtige kode med de rigtige linjenumre. Koden er skre
 (Diagram 6, egen fremstilling (2026): Reglerne og en alarms liv. Øverst farveskalaen med grænserne 55 og 60 %RH. Nederst en alarms forløb. Numrene på pilene er de tests, der kontrollerer hvert skridt)
 :::
 
+![](img/diagram-simpel-9-dataflow.png){width=100%}
+
+::: {custom-style="Billedtekst"}
+(Diagram 7, egen fremstilling (2026): Dataflow i enkel form. Øverst målingens vej: Pi'en måler, serveren tjekker, reglen afgør farven, data gemmes, og LED'en lyser. Nederst hvem der bruger data: kontrolcentret, medarbejderen, der kvitterer (alarmen går fra åben over kvitteret til lukket), og Grafana)
+:::
+
 ## Bilag C. Hele projektets mappestruktur på GitHub {.unnumbered .bilag}
 
 Mappestrukturen (på engelsk et treeview) viser alle filer i https://github.com/Vildmand/Delopgave2. Kun tre filer udgør selve serveren: `main.py`, `rules.py` og `db.py`.
@@ -329,7 +335,7 @@ Delopgave2/
 │   └── workflows/
 │       └── ci.yml                CI/CD: audit → test → Docker → Newman
 ├── docs/
-│   ├── img/                      kodebilleder (01–11) og diagrammer (1–8)
+│   ├── img/                      kodebilleder (01–11) og diagrammer (1–9)
 │   ├── KODEGUIDE.md              forklaring af koden, fil for fil
 │   ├── KRAV.md                   opgavens krav → hvor de er løst
 │   ├── PI-GUIDE.md               sådan startes pi.py på Pi'en

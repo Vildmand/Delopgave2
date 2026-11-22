@@ -21,7 +21,7 @@ Delopgave2/
 │   ├── img/
 │   │   ├── 01-rules.png … 11-ci.png      kodeskærmbillederne i denne guide
 │   │   ├── grafana.png                  skærmbillede af Grafana-dashboardet
-│   │   ├── diagram-simpel-1…8-*.png     arkitektur, alarmflow, sekvens, CI/CD, datamodel, vejen frem, context map, teknisk arkitektur
+│   │   ├── diagram-simpel-1…9-*.png     arkitektur, alarmflow, sekvens, CI/CD, datamodel, vejen frem, context map, teknisk arkitektur, dataflow
 │   │   └── README.md                    oversigt over diagrammerne
 │   ├── KODEGUIDE.md                     denne fil
 │   ├── KRAV.md                          opgavens krav → hvor de er løst
