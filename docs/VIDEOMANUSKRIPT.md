@@ -9,6 +9,8 @@ Opgaven (afsnit 4) siger, at videoen skal vise tre ting:
 Scene 3, 5, 6 og 7 dækker de tre krav. Resten viser domænet, reglen, Pi'en (remote IoT device), driften og CI/CD,
 så videoen også rammer vurderingskriterierne "sammenhæng" og "kobling mellem domæne og teknik".
 
+Vil du indtale stemmen først og filme bagefter, så brug den letlæste udgave: `docs/VIDEOMANUSKRIPT-LETLAEST.md`.
+
 Teksten under **Sig** er skrevet til at blive sagt højt. Brug den som støtte, ikke som noget, der skal læses op ord for ord.
 Det er helt fint at sige "øh" og at formulere det med egne ord. Ca. 700 ord svarer til godt 5 minutter i roligt tempo.
 
