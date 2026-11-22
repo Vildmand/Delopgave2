@@ -29,9 +29,9 @@ Her er vores context map fra delopgave 1. MVP'en bygger de to vigtigste dele: "E
 
 Sådan hænger det sammen.
 
-En Raspberry Pi med en Sense HAT måler fugten. Den sender målingen over Wi-Fi til vores REST API. Det er eventet "Sensor Value Received".
+En Raspberry Pi med en Sense HAT måler fugten. Den sender målingen over Wi-Fi til vores REST API.
 
-API'et tjekker værdien. Over 60 procent er rødt, og så åbner vi en alarm. Det er eventet "Anomaly Detected".
+API'et tjekker værdien. Over 60 procent er rødt, og så åbner vi en alarm.
 
 Alarmen dukker op i kontrolcentret, og lyset på Pi'en bliver rødt.
 

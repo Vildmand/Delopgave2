@@ -51,8 +51,7 @@ Det er helt fint at sige "øh" og at formulere det med egne ord. Ca. 700 ord sva
 
 **Sig:**
 > Sådan hænger det sammen. En Raspberry Pi med en Sense HAT måler fugten og sender den over Wi-Fi til vores REST API.
-> Det er eventet "Sensor Value Received".
-> API'et tjekker værdien mod en grænse. Over 60 procent er det rødt, og så åbner vi en alarm. Det er "Anomaly Detected".
+> API'et tjekker værdien mod en grænse. Over 60 procent er det rødt, og så åbner vi en alarm.
 > Handlingen er, at alarmen dukker op i kontrolcentret, og at LED'en på Pi'en bliver rød.
 > Alt bliver gemt i en PostgreSQL-database, der kører for sig selv.
 
